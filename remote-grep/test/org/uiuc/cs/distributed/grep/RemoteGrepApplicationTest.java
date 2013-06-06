@@ -1,4 +1,4 @@
-package org.uiuc.cs.momont2;
+package org.uiuc.cs.distributed.grep;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -9,6 +9,7 @@ import junit.framework.Assert;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.uiuc.cs.distributed.grep.RemoteGrepApplication;
 
 public class RemoteGrepApplicationTest {
 
