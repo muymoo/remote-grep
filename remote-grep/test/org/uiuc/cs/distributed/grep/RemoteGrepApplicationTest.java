@@ -37,8 +37,8 @@ public class RemoteGrepApplicationTest {
 	public void executesGrepCommand() {
 		outContent.reset();
 
-		ByteArrayInputStream in = new ByteArrayInputStream(
-				"grep 'ERROR' machine.1.log".getBytes());
+		ByteArrayInputStream in = new ByteArrayInputStream("1".getBytes());
+				//"grep 'ERROR' machine.1.log".getBytes());
 		System.setIn(in);
 		remoteGrepApplication.readInput();
 		Assert.assertEquals(
@@ -46,4 +46,9 @@ public class RemoteGrepApplicationTest {
 				outContent.toString());
 	}
 
+//	@Test
+//	public void listensOnSocket() {
+//		remoteGrepApplication.startServer();
+//		Assert.assertTrue(false);
+//	}
 }

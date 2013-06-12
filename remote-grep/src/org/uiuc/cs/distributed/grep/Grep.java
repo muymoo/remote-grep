@@ -7,36 +7,40 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 
-public class RemoteGrep {
+public class Grep {
 
-	public RemoteGrep() {
-		createDummyLogFile();
+	public Grep() {
+		createDummyLogFiles();
 	}
 
-	private void createDummyLogFile() {
+	/**
+	 * Creates dummy log files to test with
+	 */
+	private void createDummyLogFiles() {
 		String logLine = "14:53 [ERROR] Cannot read machine code.";
-		File dummyLogFile = new File("/tmp/machine.1.log");
-		try {
-			Files.write(dummyLogFile.toPath(), logLine.getBytes(),
-					StandardOpenOption.CREATE);
-		} catch (IOException e) {
-			e.printStackTrace();
+		for (int i = 0; i < 5; i++) {
+			File dummyLogFile = new File("/tmp/machine." + i + ".log");
+			try {
+				Files.write(dummyLogFile.toPath(), logLine.getBytes(),
+						StandardOpenOption.CREATE);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
-	public void deleteDummyFiles() {
-		try {
-			Files.delete(new File("/tmp/machine.1.log").toPath());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public String grep(String command) {
+	/**
+	 * Runs grep on /tmp/machine.1.log
+	 * 
+	 * @param regex
+	 *            - Regular expression to search with
+	 * @return The results of the grep command
+	 */
+	public String search(String regex) {
 		Process process = null;
 		String result = "";
 		try {
-			process = new ProcessBuilder("grep", "-rni", "[ERROR]",
+			process = new ProcessBuilder("grep", "-rni", regex,
 					"/tmp/machine.1.log").start();
 			process.waitFor();
 

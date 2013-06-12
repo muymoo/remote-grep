@@ -7,15 +7,15 @@ import junit.framework.Assert;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.uiuc.cs.distributed.grep.RemoteGrep;
+import org.uiuc.cs.distributed.grep.Grep;
 
 public class RemoteGrepTest {
 
-	static RemoteGrep remoteGrep;
+	static Grep remoteGrep;
 
 	@BeforeClass
 	public static void initialize() {
-		remoteGrep = new RemoteGrep();
+		remoteGrep = new Grep();
 	}
 
 	@AfterClass
