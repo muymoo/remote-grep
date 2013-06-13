@@ -10,5 +10,13 @@ run:
 	mkdir -p /tmp/cs425_momontbowling/logs
 	java -cp classes org.uiuc.cs.distributed.grep.RemoteGrepApplication
 
+test:
+	#java -cp 3p/jars/junit-4.11.jar ...
+	echo "TODO: complete junit test call"
+	
+
 clean:
 	rm -rf classes
+
+info:
+	echo "TODO: list Java version, Junit version, etc."
