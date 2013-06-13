@@ -15,9 +15,9 @@ import java.net.UnknownHostException;
  * @author matt
  */
 public class GrepTask extends Thread {
-	String IP;
-	int port;
-	String regex;
+	private String IP;
+	private int port;
+	private String regex;
 
 	public GrepTask(String ipAddress, int port, String regex) {
 		this.IP = ipAddress;

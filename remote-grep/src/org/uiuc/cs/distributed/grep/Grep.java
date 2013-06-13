@@ -50,7 +50,9 @@ public class Grep {
 			while ((line = br.readLine()) != null) {
 				result += line;
 			}
-		} catch (InterruptedException | IOException e) {
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch ( IOException e) {
 			e.printStackTrace();
 		}
 

@@ -71,8 +71,8 @@ public class RemoteGrepApplication {
 		String input = "";
 		long start = 0;
 		while (true) {
-			System.out
-					.println("Type 'a' to add node, 'q' to query logs, or 'e' to exit:");
+			System.out.println("Type 'a' to add node, 'q' to query logs, or 'e' to exit:");
+			
 			try {
 				input = bufferedReader.readLine();
 			} catch (IOException e) {
