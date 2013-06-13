@@ -23,9 +23,11 @@ public class RemoteGrepApplication {
 
 	private RemoteGrepApplication() {
 		threadPool = Executors.newFixedThreadPool(4);
+		String logFileLocation = logLocation + File.separator
+				+ "logs" + File.separator + "remotegrepapplication.log";
+		
 		try {
-			logFileHandler = new FileHandler(logLocation + File.separator
-					+ "logs" + File.separator + "remotegrepapplication.log");
+			logFileHandler = new FileHandler(logFileLocation);
 		} catch (SecurityException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -135,7 +137,7 @@ public class RemoteGrepApplication {
 	 * Prompt user for input
 	 */
 	public void prompt() {
-		System.out.print("Enter grep command>>");
+		System.out.print("Enter grep command>");
 	}
 
 	/**
