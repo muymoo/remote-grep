@@ -4,7 +4,7 @@
 # was only compiling RemoteGrep.class for some reason...
 all:
 	mkdir -p classes
-	javac src/org/uiuc/cs/distributed/grep/Grep.java src/org/uiuc/cs/distributed/grep/RemoteGrepApplication.java src/org/uiuc/cs/distributed/grep/GrepTask.java src/org/uiuc/cs/distributed/grep/GrepServer.java -d classes
+	javac src/org/uiuc/cs/distributed/grep/Grep.java src/org/uiuc/cs/distributed/grep/RemoteGrepApplication.java src/org/uiuc/cs/distributed/grep/GrepTask.java src/org/uiuc/cs/distributed/grep/GrepServer.java src/org/uiuc/cs/distributed/grep/Node.java -d classes
 
 run:
 	mkdir -p /tmp/cs425_momontbowling/logs

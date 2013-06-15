@@ -15,14 +15,20 @@ import java.net.UnknownHostException;
  * @author matt
  */
 public class GrepTask extends Thread {
-	private String IP;
-	private int port;
+	private Node node;
 	private String regex;
+	private String result;
 
-	public GrepTask(String ipAddress, int port, String regex) {
-		this.IP = ipAddress;
-		this.port = port;
-		this.regex = regex;
+	public GrepTask(Node _node) {
+		this.node = _node;
+	}
+	
+	public void setRegex(String _regex) {
+		this.regex = _regex;
+	}
+	
+	public String getResult() {
+		return this.result;
 	}
 
 	/**
@@ -31,50 +37,45 @@ public class GrepTask extends Thread {
 	 * console.
 	 */
 	public void run() {
-		Socket grepSocket = null;
+		Socket clientSocket = null;
 		PrintWriter out = null;
 		BufferedReader in = null;
 
-		System.out.println("grep task accessing: " + IP + ":" + port);
+		System.out.println("grep task accessing: " + this.node.toString());
 
 		try {
-			// Open socket to grep server
-			grepSocket = new Socket(IP, port);
+			clientSocket = new Socket(this.node.getIP(), this.node.getPort());
 
 			// Setup our input and output streams
-			out = new PrintWriter(grepSocket.getOutputStream(), true);
+			out = new PrintWriter(clientSocket.getOutputStream(), true);
 			in = new BufferedReader(new InputStreamReader(
-					grepSocket.getInputStream()));
+					clientSocket.getInputStream()));
 
 		} catch (UnknownHostException e) {
-			System.err.println("Don't know about host: " + IP);
+			System.err.println("Don't know about host: " + this.node.getIP());
 			System.exit(1);
 		} catch (IOException e) {
-			System.err.println("Couldn't get I/O for the connection to: " + IP);
+			System.err.println("Couldn't get I/O for the connection to: " + this.node.getIP());
 			System.exit(1);
 		}
 
 		String fromServer;
-		String grepResult = "Grep Result: ";
 
 		try {
 			// Send regular expression to grep server
 			out.println(this.regex);
+			this.result = "";
 
 			// Read grep results from server
 			while ((fromServer = in.readLine()) != null) {
-				grepResult += fromServer; // Store grep result
+				this.result += fromServer; // Store grep result
 				break;
 			}
-
-			// Print results all at once so they are not mixed with other
-			// threads
-			System.out.println(grepResult);
 
 			// Clean up socket
 			out.close();
 			in.close();
-			grepSocket.close();
+			clientSocket.close();
 
 		} catch (IOException e) {
 			e.printStackTrace();

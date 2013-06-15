@@ -10,16 +10,18 @@ import java.io.InputStreamReader;
 public class Grep {
 
 	public Grep() {
-		createDummyLogFiles();
+		//createDummyLogFiles();
 	}
 
+	
 	/**
 	 * Creates dummy log files to test with
 	 */
+	/*
 	private void createDummyLogFiles() {
 		String logLine = "14:53 [ERROR] Cannot read machine code.";
 		for (int i = 0; i < 5; i++) {
-			File dummyLogFile = new File("/tmp/machine." + i + ".log");
+			File dummyLogFile = new File("/tmp/cs425_momontbowling/machine." + i + ".log");
 			FileWriter fileWriter = null;
 			try {
 				fileWriter = new FileWriter(dummyLogFile.getAbsoluteFile());
@@ -44,7 +46,7 @@ public class Grep {
 				e.printStackTrace();
 			}
 		}
-	}
+	}*/
 
 	/**
 	 * Runs grep on /tmp/machine.1.log
@@ -58,7 +60,7 @@ public class Grep {
 		String result = "";
 		try {
 			process = new ProcessBuilder("grep", "-rni", regex,
-					"/tmp/machine.1.log").start();
+					"/tmp/cs425_momontbowling/").start();
 			process.waitFor();
 
 			BufferedReader br = new BufferedReader(new InputStreamReader(
