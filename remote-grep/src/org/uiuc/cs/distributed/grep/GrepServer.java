@@ -69,8 +69,6 @@ public class GrepServer extends Thread {
 				} catch (IOException e) {
 					this.serverPort++; // try the next port number
 					numTriesLeft--;
-					LOGGER.severe("GrepServer - run - Could not listen on port: "+serverPort);
-					System.exit(-1);
 				}
 			}
 			if(!this.foundPort) {

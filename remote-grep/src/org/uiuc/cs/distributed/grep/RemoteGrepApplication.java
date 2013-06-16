@@ -60,7 +60,7 @@ public class RemoteGrepApplication {
 		
 		app.startGrepServer();  // listen for incoming grep requests.
 
-		String hostname = "";
+		
 		String hostaddress = "";
 		try {
 			hostaddress = InetAddress.getLocalHost().getHostAddress();
@@ -126,7 +126,7 @@ public class RemoteGrepApplication {
         		e.printStackTrace();
         	}
         	System.out.println("From node: "+grepTask.getNode().toString());
-        	System.out.println(grepTask.getResult());
+        	System.out.print(grepTask.getResult());
         }
     }
 
