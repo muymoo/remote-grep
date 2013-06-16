@@ -15,7 +15,7 @@ import java.util.logging.SimpleFormatter;
 
 public class RemoteGrepApplication {
 
-	public static final String logLocation = "/tmp/cs425_momontbowling";
+	public static final String logLocation = "/tmp/cs425_momontbowling2";
 	
 	private static Logger LOGGER;
 	private static Handler logFileHandler;
@@ -128,6 +128,8 @@ public class RemoteGrepApplication {
         	System.out.println("From node: "+grepTask.getNode().toString());
         	System.out.print(grepTask.getResult());
         }
+        app.grepTasks.clear();
+        System.out.println("Grep Successful: Removed all nodes. Please re-add nodes you would like to search again.");
     }
 
     /**

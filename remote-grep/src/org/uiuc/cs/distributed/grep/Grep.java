@@ -60,14 +60,14 @@ public class Grep {
 		String result = "";
 		try {
 			process = new ProcessBuilder("grep", "-rni", regex,
-					"/tmp/cs425_momontbowling/").start();
+					"/tmp/cs425_momontbowling2/").start();
 			process.waitFor();
 
 			BufferedReader br = new BufferedReader(new InputStreamReader(
 					process.getInputStream()));
 			String line = "";
 			while ((line = br.readLine()) != null) {
-				result += line;
+				result += line + "\n";
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();

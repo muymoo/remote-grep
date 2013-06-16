@@ -101,7 +101,9 @@ public class GrepServer extends Thread {
 					}
 					clientOutput = grep.search(clientInput); // run grep
 					LOGGER.info("GrepServer - run - clientOutput: "+clientOutput);
-					out.println(clientOutput); // Send results back to client
+					clientOutput += "<END>\n";
+					out.print(clientOutput); // Send results back to client
+					out.println("<END>");
 				}
 				
 				out.close();
