@@ -9,7 +9,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 /**
  * The grep server listens for regular expressions (regex) coming into port 4444
@@ -27,6 +29,7 @@ public class GrepServer extends Thread {
 	private ServerSocket serverSocket = null;
 	private int serverPort = 4444;
 	private boolean listening = true;
+	private boolean foundPort;
 
 
 	public GrepServer() {
@@ -42,18 +45,35 @@ public class GrepServer extends Thread {
 			e.printStackTrace();
 		}
 		LOGGER = Logger.getLogger("GrepServer");
-		for(Handler handler : LOGGER.getHandlers()) {
-		    LOGGER.removeHandler(handler);
-		}
+		LOGGER.setUseParentHandlers(false);
+		logFileHandler.setFormatter(new SimpleFormatter());
+		logFileHandler.setLevel(Level.INFO);
 		LOGGER.addHandler(logFileHandler);
+		
+		this.foundPort = false;
+	}
+	
+	// TODO: introduce thread wait for the this.foundPort condition
+	//       be sure it doesn't introduce potential deadlock
+	public synchronized int getPort() {
+		return this.serverPort;
 	}
 
 	public void run() {
 		try {
-			
-			try {
-				this.serverSocket = new ServerSocket(serverPort);
-			} catch (IOException e) {
+			int numTriesLeft = 1000;
+			while(!this.foundPort && numTriesLeft > 0) {
+				try {
+					this.serverSocket = new ServerSocket(serverPort);
+					this.foundPort = true;
+				} catch (IOException e) {
+					this.serverPort++; // try the next port number
+					numTriesLeft--;
+					LOGGER.severe("GrepServer - run - Could not listen on port: "+serverPort);
+					System.exit(-1);
+				}
+			}
+			if(!this.foundPort) {
 				LOGGER.severe("GrepServer - run - Could not listen on port: "+serverPort);
 				System.exit(-1);
 			}
@@ -82,7 +102,7 @@ public class GrepServer extends Thread {
 						break;
 					}
 					clientOutput = grep.search(clientInput); // run grep
-					LOGGER.info("GrepServer - run - clientOutput: "+clientInput);
+					LOGGER.info("GrepServer - run - clientOutput: "+clientOutput);
 					out.println(clientOutput); // Send results back to client
 				}
 				

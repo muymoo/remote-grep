@@ -26,7 +26,7 @@ public class RemoteGrepApplicationTest
     {
         remoteGrepApplication = RemoteGrepApplication.getInstance();
         System.setOut(new PrintStream(outContent));
-        TestLogs.createLogFiles();
+        TestLogs.createLogFile(5,100);
 
         // Create tasks for each machine
         for (String ipAndPort : ipAndPorts)

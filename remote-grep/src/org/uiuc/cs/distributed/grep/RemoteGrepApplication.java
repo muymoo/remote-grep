@@ -9,7 +9,9 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public class RemoteGrepApplication {
 
@@ -35,9 +37,9 @@ public class RemoteGrepApplication {
 			e.printStackTrace();
 		}
 		LOGGER = Logger.getLogger("RemoteGrepApplication");
-		for(Handler handler : LOGGER.getHandlers()) {
-		    LOGGER.removeHandler(handler);
-		}
+		LOGGER.setUseParentHandlers(false);
+		logFileHandler.setFormatter(new SimpleFormatter());
+		logFileHandler.setLevel(Level.INFO);
 		LOGGER.addHandler(logFileHandler);
 		this.grepTasks = new ArrayList<GrepTask>();
 	}
@@ -59,12 +61,12 @@ public class RemoteGrepApplication {
 		app.startGrepServer();  // listen for incoming grep requests.
 
 		String hostname = "";
+		String hostaddress = "";
 		try {
-			hostname = InetAddress.getLocalHost().getHostName();
-			String hostaddress = InetAddress.getLocalHost().getHostAddress();
+			hostaddress = InetAddress.getLocalHost().getHostAddress();
 			
-			System.out.println("RemoteGrepApplication - main - hostname: "+hostname);
-			System.out.println("RemoteGrepApplicaiton - main - hostaddress: "+hostaddress);
+			System.out.println("RemoteGrepApplication Server started on: "+hostaddress+":"+app.grepServer.getPort());
+			LOGGER.info("RemoteGrepApplication Server started on: "+hostaddress+":"+app.grepServer.getPort());
 		} catch (UnknownHostException e1) {
 			LOGGER.warning("RemoteGrepApplication - main- failed to identify host");
 		}
@@ -84,17 +86,13 @@ public class RemoteGrepApplication {
 					// TODO: add isValid() check on input
 					addTaskForNode(new Node(ipAndPort));
 				} else if ("q".equals(input.trim())) {
-					if(app.grepTasks.size() == 0) {
-						System.out.println("No other nodes added yet.");
-					} else {
-						start = System.currentTimeMillis();
-						System.out.print("Enter grep regex>");
-						String regex = bufferedReader.readLine();
-						runGrepTasks(regex);
-						joinGrepTasks();
-						long end = System.currentTimeMillis();
-						System.out.println("Total Time: "+(end-start)+"ms");
-					}
+					start = System.currentTimeMillis();
+					System.out.print("Enter grep regex>");
+					String regex = bufferedReader.readLine();
+					runGrepTasks(regex);
+					joinGrepTasks();
+					long end = System.currentTimeMillis();
+					System.out.println("Total Time: "+(end-start)+"ms");
 				} else if ("e".equals(input.trim())) {
 					app.stopGrepServer();
 					break;
@@ -127,6 +125,7 @@ public class RemoteGrepApplication {
         		// TODO Auto-generated catch block
         		e.printStackTrace();
         	}
+        	System.out.println("From node: "+grepTask.getNode().toString());
         	System.out.println(grepTask.getResult());
         }
     }

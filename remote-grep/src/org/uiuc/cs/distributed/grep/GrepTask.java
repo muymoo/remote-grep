@@ -30,6 +30,10 @@ public class GrepTask extends Thread {
 	public String getResult() {
 		return this.result;
 	}
+	
+	public Node getNode() {
+		return this.node;
+	}
 
 	/**
 	 * Runs the client side grep commands. This function calls the remote grep
