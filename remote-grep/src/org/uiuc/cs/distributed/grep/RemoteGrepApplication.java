@@ -21,6 +21,7 @@ public class RemoteGrepApplication {
 	private GrepServer grepServer = new GrepServer();
 	public ArrayList<GrepTask> grepTasks;
 	public GrepTask greptask1;
+    private static RemoteGrepApplication app = RemoteGrepApplication.getInstance();
 
 	private RemoteGrepApplication() {
 		String logFileLocation = logLocation + File.separator
@@ -54,7 +55,6 @@ public class RemoteGrepApplication {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		RemoteGrepApplication app = RemoteGrepApplication.getInstance();
 		
 		app.startGrepServer();  // listen for incoming grep requests.
 
@@ -82,28 +82,16 @@ public class RemoteGrepApplication {
 					System.out.println("Enter IP and port (e.g. \"1.2.3.4:4444\"): ");
 					String ipAndPort = bufferedReader.readLine();
 					// TODO: add isValid() check on input
-					GrepTask grepTask = new GrepTask(new Node(ipAndPort));
-					app.grepTasks.add(grepTask);
+					addTaskForNode(new Node(ipAndPort));
 				} else if ("q".equals(input.trim())) {
 					if(app.grepTasks.size() == 0) {
 						System.out.println("No other nodes added yet.");
 					} else {
 						start = System.currentTimeMillis();
-						System.out.print("Enter grep command>");
-						String grepCommand = bufferedReader.readLine();
-						for(GrepTask grepTask : app.grepTasks) {
-							grepTask.setRegex(grepCommand);
-							grepTask.start();	
-						}
-						for(GrepTask grepTask : app.grepTasks) {
-							try {
-								grepTask.join();
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							System.out.println(grepTask.getResult());
-						}
+						System.out.print("Enter grep regex>");
+						String regex = bufferedReader.readLine();
+						runGrepTasks(regex);
+						joinGrepTasks();
 						long end = System.currentTimeMillis();
 						System.out.println("Total Time: "+(end-start)+"ms");
 					}
@@ -127,6 +115,37 @@ public class RemoteGrepApplication {
 		}
 	}
 
+    /**
+     * 
+     */
+    public static void joinGrepTasks()
+    {
+        for(GrepTask grepTask : app.grepTasks) {
+        	try {
+        		grepTask.join();
+        	} catch (InterruptedException e) {
+        		// TODO Auto-generated catch block
+        		e.printStackTrace();
+        	}
+        	System.out.println(grepTask.getResult());
+        }
+    }
+
+    /**
+     * @param grepCommand
+     */
+    public static void runGrepTasks(String regex)
+    {
+        for(GrepTask grepTask : app.grepTasks) {
+        	grepTask.setRegex(regex);
+        	grepTask.start();
+        }
+    }
+
+	public static void addTaskForNode(Node node) {
+        app.grepTasks.add(new GrepTask(node));
+	}
+	
 	/**
 	 * Listens on port 4444 for incoming grep requests
 	 */
