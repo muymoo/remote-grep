@@ -38,6 +38,7 @@ public class RemoteGrepApplication {
 		    LOGGER.removeHandler(handler);
 		}
 		LOGGER.addHandler(logFileHandler);
+		this.grepTasks = new ArrayList<GrepTask>();
 	}
 
 	public static RemoteGrepApplication getInstance() {
@@ -79,37 +80,34 @@ public class RemoteGrepApplication {
 				input = bufferedReader.readLine();
 				if ("a".equals(input.trim())) {
 					System.out.println("Enter IP and port (e.g. \"1.2.3.4:4444\"): ");
-					
-				} else if ("q1".equals(input.trim())) {
-					app.greptask1 = new GrepTask(new Node("localhost", 4444));
-					System.out.print("Enter grep command>");
-					String grepCommand = bufferedReader.readLine();
-					app.greptask1.setRegex(grepCommand);
-					app.greptask1.start();
-					try {
-						app.greptask1.join();
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					String ipAndPort = bufferedReader.readLine();
+					// TODO: add isValid() check on input
+					GrepTask grepTask = new GrepTask(new Node(ipAndPort));
+					app.grepTasks.add(grepTask);
+				} else if ("q".equals(input.trim())) {
+					if(app.grepTasks.size() == 0) {
+						System.out.println("No other nodes added yet.");
+					} else {
+						start = System.currentTimeMillis();
+						System.out.print("Enter grep command>");
+						String grepCommand = bufferedReader.readLine();
+						for(GrepTask grepTask : app.grepTasks) {
+							grepTask.setRegex(grepCommand);
+							grepTask.start();	
+						}
+						for(GrepTask grepTask : app.grepTasks) {
+							try {
+								grepTask.join();
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							System.out.println(grepTask.getResult());
+						}
+						long end = System.currentTimeMillis();
+						System.out.println("Total Time: "+(end-start)+"ms");
 					}
-					System.out.println(app.greptask1.getResult());
-				} else if("q2".equals(input.trim())) {
-					app.greptask1 = new GrepTask(new Node("130.126.112.146", 4444));
-					System.out.print("Enter grep command>");
-					String grepCommand = bufferedReader.readLine();
-					app.greptask1.setRegex(grepCommand);
-					app.greptask1.start();
-					try {
-						app.greptask1.join();
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					System.out.println(app.greptask1.getResult());
 				} else if ("e".equals(input.trim())) {
-					start = System.currentTimeMillis();
-					long end = System.currentTimeMillis();
-					
 					app.stopGrepServer();
 					break;
 				}

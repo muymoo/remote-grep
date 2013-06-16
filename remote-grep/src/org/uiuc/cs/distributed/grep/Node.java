@@ -5,7 +5,11 @@ public class Node {
 	private int port;
 
 	public Node(String ipAndPort) {
-		
+		String[] parts = ipAndPort.split(":");
+		if(parts.length == 2) {
+			this.ip = parts[0];
+			this.port = Integer.parseInt(parts[1]);
+		}
 	}
 	
 	public Node(String _ip, int _port) throws IllegalArgumentException {
