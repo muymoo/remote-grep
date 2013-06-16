@@ -7,8 +7,6 @@ import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
@@ -75,12 +73,11 @@ public class RemoteGrepApplication {
 		String input = "";
 		
 		while (true) {
-			System.out.println("Type 'a' to add node, 'q1|q2' to query logs, or 'e' to exit:");
+			System.out.println("Type 'a' to add node, 'q' to query logs, or 'e' to exit:");
 			long start;
 			try {
 				input = bufferedReader.readLine();
 				if ("a".equals(input.trim())) {
-					System.out.println("add logic");
 					System.out.println("Enter IP and port (e.g. \"1.2.3.4:4444\"): ");
 					
 				} else if ("q1".equals(input.trim())) {

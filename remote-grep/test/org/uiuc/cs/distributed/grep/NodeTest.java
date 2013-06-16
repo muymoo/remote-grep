@@ -10,33 +10,52 @@ import org.junit.Test;
 
 public class NodeTest {
 
+	/*
+	 * construct a Node with a blank string
+	 * should fail
+	 */
 	@Test
-	public void testBlankIP() {
-		Node node = new Node("",0);
+	public void testBlankString() {
+		Node node = new Node("");
 		
-		assertTrue
-		fail("Not yet implemented");
+		boolean expected = false;
+		boolean actual = node.isValid();
+		String errorMessage = "A Node constructed with a blank string returned true for isValid";
+		assertEquals(errorMessage, expected, actual);
 	}
 	
+	/*
+	 * construct a Node with a valid IP but no port
+	 * should fail
+	 */
+	@Test
 	public void testValidIPNoPort() {
-		Node node = new Node();
-		fail();
+		Node node = new Node("130.126.112.146");
+		
+		boolean expected = false;
+		boolean actual = node.isValid();
+		String errorMessage = "A Node constructed with a valid IP but no port returned true for isValid";
+		assertEquals(errorMessage, expected, actual);
 	}
 	
+	@Test
 	public void testValidIPValidPort() {
-		fail();
+		fail("Not Yet Implemented");
 	}
 	
+	@Test
 	public void testInvalidIPWithCharacters() {
-		fail();
+		fail("Not Yet Implemented");
 	}
 	
+	@Test
 	public void testInvalidIPWithTooFewPeriods() {
-		fail();
+		fail("Not Yet Implemented");
 	}
 	
+	@Test
 	public void testGetters() {
-		fail();
+		fail("Not Yet Implemented");
 	}
 
 }

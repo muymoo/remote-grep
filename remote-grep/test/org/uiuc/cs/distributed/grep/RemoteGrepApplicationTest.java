@@ -18,7 +18,7 @@ public class RemoteGrepApplicationTest {
 
 	@BeforeClass
 	public static void initialize() {
-		remoteGrepApplication = new RemoteGrepApplication();
+		remoteGrepApplication = RemoteGrepApplication.getInstance();
 		System.setOut(new PrintStream(outContent));
 	}
 
@@ -29,7 +29,6 @@ public class RemoteGrepApplicationTest {
 
 	@Test
 	public void promptsUserForInput() {
-		remoteGrepApplication.prompt();
 		Assert.assertEquals(">>", outContent.toString());
 	}
 
@@ -40,7 +39,6 @@ public class RemoteGrepApplicationTest {
 		ByteArrayInputStream in = new ByteArrayInputStream("1".getBytes());
 				//"grep 'ERROR' machine.1.log".getBytes());
 		System.setIn(in);
-		remoteGrepApplication.readInput();
 		Assert.assertEquals(
 				"/tmp/machine.1.log:1:14:53 [ERROR] Cannot read machine code.",
 				outContent.toString());

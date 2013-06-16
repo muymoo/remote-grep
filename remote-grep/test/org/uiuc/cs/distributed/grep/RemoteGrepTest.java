@@ -20,7 +20,6 @@ public class RemoteGrepTest {
 
 	@AfterClass
 	public static void cleanUp() {
-		remoteGrep.deleteDummyFiles();
 	}
 
 	@Test
@@ -32,7 +31,7 @@ public class RemoteGrepTest {
 	@Test
 	public void grepFileForError() {
 		String grepCommand = "grep 'ERROR' machine.1.log";
-		String result = remoteGrep.grep(grepCommand);
+		String result = remoteGrep.search(grepCommand);
 		Assert.assertEquals(
 				"/tmp/machine.1.log:1:14:53 [ERROR] Cannot read machine code.",
 				result);
