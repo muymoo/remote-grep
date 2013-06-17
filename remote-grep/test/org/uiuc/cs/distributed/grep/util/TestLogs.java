@@ -29,7 +29,7 @@ public class TestLogs {
 		if(args.length > 1) {
 			createLogFile(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
 		} else {
-			createLogFile(5, 100);
+			createLogFile(5, 100000);
 		}
 	}
 	

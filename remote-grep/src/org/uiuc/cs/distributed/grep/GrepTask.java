@@ -71,13 +71,16 @@ public class GrepTask extends Thread {
 			this.result = "";
 
 			// Read grep results from server
+			StringBuilder builder = new StringBuilder();
 			while ((fromServer = in.readLine()) != null) {
 			    if(fromServer.equals("<END>")) {
 			        break;
 			    }
-				this.result += fromServer + "\n" ; // Store grep result
+			    builder.append(fromServer);
+			    builder.append("\n");
+				//this.result += fromServer + "\n" ; // Store grep result
 			}
-			
+			this.result = builder.toString();
 			// Clean up socket
 			out.close();
 			in.close();
