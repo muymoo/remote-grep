@@ -66,6 +66,14 @@ public class RemoteGrepApplicationTest
     }
     
     @Test
+    public void grepWarning()
+    {
+        RemoteGrepApplication.runGrepTasks("-rni warning");
+        RemoteGrepApplication.joinGrepTasks();
+        Assert.assertTrue(outContent.toString().contains("WARNING"));
+    }
+    
+    @Test
     public void grepRegex()
     {
         RemoteGrepApplication.runGrepTasks("'[1-9]\\+ of me'");
