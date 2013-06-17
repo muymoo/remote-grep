@@ -14,80 +14,98 @@ import java.net.UnknownHostException;
  * 
  * @author matt
  */
-public class GrepTask extends Thread {
-	private Node node;
-	private String regex;
-	private String result;
+public class GrepTask extends Thread
+{
+    private Node   node;
+    private String regex;
+    private String result;
 
-	public GrepTask(Node _node) {
-		this.node = _node;
-	}
-	
-	public void setRegex(String _regex) {
-		this.regex = _regex;
-	}
-	
-	public String getResult() {
-		return this.result;
-	}
-	
-	public Node getNode() {
-		return this.node;
-	}
+    public GrepTask(Node _node)
+    {
+        this.node = _node;
+    }
 
-	/**
-	 * Runs the client side grep commands. This function calls the remote grep
-	 * server for this task with a regex and then prints off the result to the
-	 * console.
-	 */
-	public void run() {
-		Socket clientSocket = null;
-		PrintWriter out = null;
-		BufferedReader in = null;
+    public void setRegex(String _regex)
+    {
+        this.regex = _regex;
+    }
 
-		System.out.println("grep task accessing: " + this.node.toString());
+    public String getResult()
+    {
+        return this.result;
+    }
 
-		try {
-			clientSocket = new Socket(this.node.getIP(), this.node.getPort());
+    public Node getNode()
+    {
+        return this.node;
+    }
 
-			// Setup our input and output streams
-			out = new PrintWriter(clientSocket.getOutputStream(), true);
-			in = new BufferedReader(new InputStreamReader(
-					clientSocket.getInputStream()));
+    /**
+     * Runs the client side grep commands. This function calls the remote grep
+     * server for this task with a regex and then prints off the result to the
+     * console.
+     */
+    @Override
+    public void run()
+    {
+        Socket clientSocket = null;
+        PrintWriter out = null;
+        BufferedReader in = null;
 
-		} catch (UnknownHostException e) {
-			System.err.println("Don't know about host: " + this.node.getIP());
-			System.exit(1);
-		} catch (IOException e) {
-			System.err.println("Couldn't get I/O for the connection to: " + this.node.getIP());
-			System.exit(1);
-		}
+        System.out.println("grep task accessing: " + this.node.toString());
 
-		String fromServer;
+        try
+        {
+            clientSocket = new Socket(this.node.getIP(), this.node.getPort());
 
-		try {
-			// Send regular expression to grep server
-			out.println(this.regex);
-			this.result = "";
+            // Setup our input and output streams
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-			// Read grep results from server
-			StringBuilder builder = new StringBuilder();
-			while ((fromServer = in.readLine()) != null) {
-			    if(fromServer.equals("<END>")) {
-			        break;
-			    }
-			    builder.append(fromServer);
-			    builder.append("\n");
-				//this.result += fromServer + "\n" ; // Store grep result
-			}
-			this.result = builder.toString();
-			// Clean up socket
-			out.close();
-			in.close();
-			clientSocket.close();
+        }
+        catch (UnknownHostException e)
+        {
+            System.err.println("Don't know about host: " + this.node.getIP());
+            System.exit(1);
+        }
+        catch (IOException e)
+        {
+            System.err.println("Couldn't get I/O for the connection to: " + this.node.getIP());
+            System.exit(1);
+        }
 
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+        String fromServer;
+
+        try
+        {
+            // Send regular expression to grep server
+            out.println(this.regex);
+            this.result = "";
+
+            // Read grep results from server with a string builder for speed
+            StringBuilder builder = new StringBuilder();
+            while ((fromServer = in.readLine()) != null)
+            {
+                if ( fromServer.equals("<END>") )
+                {
+                    break;
+                }
+                builder.append(fromServer);
+                builder.append("\n");
+            }
+
+            // Store results so they can be read later
+            this.result = builder.toString();
+
+            // Clean up socket
+            out.close();
+            in.close();
+            clientSocket.close();
+
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
 }

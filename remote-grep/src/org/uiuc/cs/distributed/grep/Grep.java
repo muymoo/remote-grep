@@ -1,59 +1,16 @@
 package org.uiuc.cs.distributed.grep;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class Grep
 {
-
-    public Grep()
-    {
-        // createDummyLogFiles();
-    }
-
-    /**
-     * Creates dummy log files to test with
-     */
-    /*
-     * private void createDummyLogFiles() {
-     * String logLine = "14:53 [ERROR] Cannot read machine code.";
-     * for (int i = 0; i < 5; i++) {
-     * File dummyLogFile = new File("/tmp/cs425_momontbowling/machine." + i + ".log");
-     * FileWriter fileWriter = null;
-     * try {
-     * fileWriter = new FileWriter(dummyLogFile.getAbsoluteFile());
-     * } catch (IOException e1) {
-     * e1.printStackTrace();
-     * }
-     * BufferedWriter writer = new BufferedWriter(fileWriter);
-     * try {
-     * writer.write(logLine);
-     * } catch (IOException e) {
-     * e.printStackTrace();
-     * }
-     * try {
-     * writer.close();
-     * } catch (IOException e) {
-     * e.printStackTrace();
-     * }
-     * try {
-     * fileWriter.close();
-     * } catch (IOException e) {
-     * e.printStackTrace();
-     * }
-     * }
-     * }
-     */
-
     /**
      * Runs grep on /tmp/machine.1.log
      * 
      * @param regex
-     *            - Regular expression to search with
+     *            - Regular expression to search with. This may include flags at the begining.
      * @return The results of the grep command
      */
     public String search(String regex)
@@ -63,8 +20,9 @@ public class Grep
         try
         {
             // Use a shell so we can use wildcard (*) for the machine.*.log with ProcessBuilder
-            process = new ProcessBuilder("/bin/sh", "-c", "grep " + regex + " /tmp/cs425_momontbowling2/machine*").redirectErrorStream(true).start();
-            
+            process = new ProcessBuilder("/bin/sh", "-c", "grep " + regex + " /tmp/cs425_momontbowling2/machine*")
+                    .redirectErrorStream(true).start();
+
             BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line = "";
             StringBuilder builder = new StringBuilder();

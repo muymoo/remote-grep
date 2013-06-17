@@ -22,100 +22,124 @@ import java.util.logging.SimpleFormatter;
  * @author evan
  * 
  */
-public class GrepServer extends Thread {
-	private static Logger LOGGER;
-	private static Handler logFileHandler;
-	
-	private ServerSocket serverSocket = null;
-	private int serverPort = 4444;
-	private boolean listening = true;
-	private boolean foundPort;
+public class GrepServer extends Thread
+{
+    private static Logger  LOGGER;
+    private static Handler logFileHandler;
 
+    private ServerSocket   serverSocket = null;
+    private int            serverPort   = 4444;
+    private boolean        listening    = true;
+    private boolean        foundPort;
 
-	public GrepServer() {
-		super("GrepServerThread");
-		String logFileLocation = RemoteGrepApplication.logLocation + File.separator
-				+ "logs" + File.separator + "grepserver.log";
-		
-		try {
-			logFileHandler = new FileHandler(logFileLocation);
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		LOGGER = Logger.getLogger("GrepServer");
-		LOGGER.setUseParentHandlers(false);
-		logFileHandler.setFormatter(new SimpleFormatter());
-		logFileHandler.setLevel(Level.INFO);
-		LOGGER.addHandler(logFileHandler);
-		
-		this.foundPort = false;
-	}
-	
-	// TODO: introduce thread wait for the this.foundPort condition
-	//       be sure it doesn't introduce potential deadlock
-	public synchronized int getPort() {
-		return this.serverPort;
-	}
+    /**
+     * Names the thread and sets up the default log file location.
+     */
+    public GrepServer()
+    {
+        super("GrepServerThread");
+        String logFileLocation = RemoteGrepApplication.logLocation + File.separator + "logs" + File.separator
+                + "grepserver.log";
 
-	public void run() {
-		try {
-			int numTriesLeft = 1000;
-			while(!this.foundPort && numTriesLeft > 0) {
-				try {
-					this.serverSocket = new ServerSocket(serverPort);
-					this.foundPort = true;
-				} catch (IOException e) {
-					this.serverPort++; // try the next port number
-					numTriesLeft--;
-				}
-			}
-			if(!this.foundPort) {
-				LOGGER.severe("GrepServer - run - Could not listen on port: "+serverPort);
-				System.exit(-1);
-			}
-			LOGGER.info("GrepServer - run - Server started on socket: "+serverPort);
-			
-			
-			while(listening) {
-				Socket clientSocket = serverSocket.accept();
-				LOGGER.info("GrepServer - run - accepted connection from: "+clientSocket.getInetAddress()+":"+clientSocket.getPort());
-				
-				// Setup our input/output streams
-				PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-				BufferedReader in = new BufferedReader(new InputStreamReader(
-						clientSocket.getInputStream()));
-	
-				String clientInput, clientOutput;
-				Grep grep = new Grep();
-				
-				// Loop until grep doesn't return any more results
-				while((clientInput = in.readLine()) != null) {
-					LOGGER.info("GrepServer - run - clientInput: "+clientInput);
-					if(clientInput.equals("<QUIT>"))
-					{
-						listening = false;
-						out.println("Shutting Down");
-						break;
-					}
-					clientOutput = grep.search(clientInput); // run grep
-					LOGGER.info("GrepServer - run - clientOutput: "+clientOutput);
-					clientOutput += "<END>\n";
-					out.print(clientOutput); // Send results back to client
-					out.println("<END>");
-				}
-				
-				out.close();
-				in.close();
-				clientSocket.close();
-				
-			}
+        try
+        {
+            logFileHandler = new FileHandler(logFileLocation);
+        }
+        catch (SecurityException e)
+        {
+            e.printStackTrace();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        LOGGER = Logger.getLogger("GrepServer");
+        LOGGER.setUseParentHandlers(false);
+        logFileHandler.setFormatter(new SimpleFormatter());
+        logFileHandler.setLevel(Level.INFO);
+        LOGGER.addHandler(logFileHandler);
 
-			serverSocket.close();
-			LOGGER.info("GrepServer - run - socket closed, shutting down server.");
-		} catch (IOException e) {
-			LOGGER.info("GrepServer - run - IOException: "+e.getMessage()+" stack trace: "+e.getStackTrace().toString());
-		}
-	}
+        this.foundPort = false;
+    }
+
+    public synchronized int getPort()
+    {
+        return this.serverPort;
+    }
+
+    /**
+     * Listens for a client to request a grep command then runs the grep command on the server. The results are returned over the socket connection to the
+     * client.
+     */
+    @Override
+    public void run()
+    {
+        try
+        {
+            int numTriesLeft = 1000;
+            while (!this.foundPort && numTriesLeft > 0)
+            {
+                try
+                {
+                    this.serverSocket = new ServerSocket(serverPort);
+                    this.foundPort = true;
+                }
+                catch (IOException e)
+                {
+                    this.serverPort++; // try the next port number
+                    numTriesLeft--;
+                }
+            }
+            if ( !this.foundPort )
+            {
+                LOGGER.severe("GrepServer - run - Could not listen on port: " + serverPort);
+                System.exit(-1);
+            }
+            LOGGER.info("GrepServer - run - Server started on socket: " + serverPort);
+
+            while (listening)
+            {
+                Socket clientSocket = serverSocket.accept();
+                LOGGER.info("GrepServer - run - accepted connection from: " + clientSocket.getInetAddress() + ":"
+                        + clientSocket.getPort());
+
+                // Setup our input/output streams
+                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+                String clientInput, clientOutput;
+                Grep grep = new Grep();
+
+                // Loop until grep doesn't return any more results
+                while ((clientInput = in.readLine()) != null)
+                {
+                    LOGGER.info("GrepServer - run - clientInput: " + clientInput);
+                    if ( clientInput.equals("<QUIT>") )
+                    {
+                        listening = false;
+                        out.println("Shutting Down");
+                        break;
+                    }
+                    clientOutput = grep.search(clientInput); // run grep
+                    LOGGER.info("GrepServer - run - clientOutput: " + clientOutput);
+                    clientOutput += "<END>\n";
+                    out.print(clientOutput); // Send results back to client
+                    out.println("<END>");
+                }
+
+                out.close();
+                in.close();
+                clientSocket.close();
+
+            }
+
+            serverSocket.close();
+            LOGGER.info("GrepServer - run - socket closed, shutting down server.");
+        }
+        catch (IOException e)
+        {
+            LOGGER.info("GrepServer - run - IOException: " + e.getMessage() + " stack trace: "
+                    + e.getStackTrace().toString());
+        }
+    }
 }
