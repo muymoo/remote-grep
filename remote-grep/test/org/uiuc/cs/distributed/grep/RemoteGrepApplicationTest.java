@@ -1,38 +1,31 @@
 package org.uiuc.cs.distributed.grep;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.util.Arrays;
-import java.util.List;
 
 import junit.framework.Assert;
 
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.uiuc.cs.distributed.grep.util.TestLogs;
+
 
 public class RemoteGrepApplicationTest
 {
 
     private final static ByteArrayOutputStream outContent = new ByteArrayOutputStream();
     static RemoteGrepApplication               remoteGrepApplication;
-    private static List<String>                ipAndPorts = Arrays.asList("130.126.112.146:4444",
-                                                                  "130.126.112.148:4444");
 
     @BeforeClass
     public static void initialize()
     {
         remoteGrepApplication = RemoteGrepApplication.getInstance();
+        remoteGrepApplication.startGrepServer();
+        
         System.setOut(new PrintStream(outContent));
         TestLogs.createLogFile(5,100);
-
-        // Create tasks for each machine
-        for (String ipAndPort : ipAndPorts)
-        {
-            RemoteGrepApplication.addTaskForNode(new Node(ipAndPort));
-        }
     }
 
     @AfterClass
@@ -40,35 +33,43 @@ public class RemoteGrepApplicationTest
     {
         System.setOut(null);
     }
+    
+    @Before
+    public void setUp()
+    {
+        RemoteGrepApplication.addTaskForNode(new Node("localhost:4444"));
+        // RemoteGrepApplication.addDefaultNodes();
+    }
 
     @Test
-    public void grepForError()
+    public void grepForDoubleLine()
     {
-        RemoteGrepApplication.runGrepTasks("error");
+        RemoteGrepApplication.runGrepTasks("'There should be 2 of me.'");
         RemoteGrepApplication.joinGrepTasks();
-        Assert.assertEquals("errors", outContent.toString());
+        Assert.assertTrue(outContent.toString().contains("There should be 2 of me.\nThere should be 2 of me.\n"));
     }
-
+    
     @Test
-    public void promptsUserForInput()
+    public void grepWithFlags()
     {
-        Assert.assertEquals(">>", outContent.toString());
+        RemoteGrepApplication.runGrepTasks("-rni '2 of me'");
+        RemoteGrepApplication.joinGrepTasks();
+        Assert.assertTrue(outContent.toString().contains("/tmp/cs425_momontbowling2/machine.5.log:101:There should be 2 of me."));
     }
-
+    
     @Test
-    public void executesGrepCommand()
+    public void grepSevere()
     {
-        outContent.reset();
-
-        ByteArrayInputStream in = new ByteArrayInputStream("1".getBytes());
-        // "grep 'ERROR' machine.1.log".getBytes());
-        System.setIn(in);
-        Assert.assertEquals("/tmp/machine.1.log:1:14:53 [ERROR] Cannot read machine code.", outContent.toString());
+        RemoteGrepApplication.runGrepTasks("-rni severe");
+        RemoteGrepApplication.joinGrepTasks();
+        Assert.assertTrue(outContent.toString().contains("SEVERE"));
     }
-
-    // @Test
-    // public void listensOnSocket() {
-    // remoteGrepApplication.startServer();
-    // Assert.assertTrue(false);
-    // }
+    
+    @Test
+    public void grepRegex()
+    {
+        RemoteGrepApplication.runGrepTasks("'[1-9]\\+ of me'");
+        RemoteGrepApplication.joinGrepTasks();
+        Assert.assertTrue(outContent.toString().contains("There should be 2 of me.\nThere should be 2 of me.\n"));   
+    }
 }

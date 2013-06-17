@@ -29,7 +29,7 @@ public class TestLogs {
 		if(args.length > 1) {
 			createLogFile(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
 		} else {
-			createLogFile(5, 100000);
+			createLogFile(5, 10000);
 		}
 	}
 	
@@ -38,9 +38,9 @@ public class TestLogs {
 	 * all the dates/times within the logs start at March 01, 2013 CST
 	 * 
 	 * NOTES:
-	 *  Frequent log lines   = 60%
-	 *  Infrequent log lines = 30%
-	 *  Rare log lines       = 10%
+	 *  Frequent log lines   = 80%
+	 *  Infrequent log lines = 19%
+	 *  Rare log lines       = 1%
 	 */
 	public static void createLogFile(int fileIndex, int numberOfLines) {
 		try {
@@ -64,11 +64,11 @@ public class TestLogs {
 			for(int lineIndex = 0; lineIndex< numberOfLines;lineIndex++ )
 			{
                 // adjust the logType and the time based on the line number
-                if(lineIndex < numberOfLines/10) { // Rare
+                if(lineIndex < numberOfLines/100) { // Rare
                     logType = "SEVERE "; // padding necessary for consistent line length
-                } else if( lineIndex >= numberOfLines/10 && lineIndex < (2 * (numberOfLines/5))) { // Infrequent
+                } else if( lineIndex >= numberOfLines/100 && lineIndex < (numberOfLines/5)) { // Infrequent
                     logType = "WARNING";
-                } else if( lineIndex >= (2 * (numberOfLines/5))) { // Frequent
+                } else if( lineIndex >= (numberOfLines/5)) { // Frequent
                     logType = "INFO   "; // padding necessary for consistent line length
                 }
 				logDate.setTime((time * 1000) + (lineIndex * 60000));
@@ -80,7 +80,11 @@ public class TestLogs {
 				String line = logType + " " + logDate.toString() + "-" + errorMessages[errorMessageIndex];
 				bufferedWriter.write(line);
 			}
-
+			
+			// Extra lines for testing
+			bufferedWriter.write("There should be 2 of me.\n");
+			bufferedWriter.write("There should be 2 of me.\n");
+			
 			bufferedWriter.close();
 			fileWriter.close();
 		} catch (IOException e1) {

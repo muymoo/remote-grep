@@ -24,7 +24,7 @@ public class RemoteGrepApplication {
 	public ArrayList<GrepTask> grepTasks;
 	public GrepTask greptask1;
     private static RemoteGrepApplication app = RemoteGrepApplication.getInstance();
-
+    private static String[] servers = new String[] {"130.126.112.148:4444", "130.126.112.146:4444", "130.126.112.117:4444"};
 	private RemoteGrepApplication() {
 		String logFileLocation = logLocation + File.separator
 				+ "logs" + File.separator + "remotegrepapplication.log";
@@ -76,7 +76,7 @@ public class RemoteGrepApplication {
 		String input = "";
 		
 		while (true) {
-			System.out.println("Type 'a' to add node, 'q' to query logs, or 'e' to exit:");
+            System.out.println("Type 'a' to add node ('d' adds default nodes), 'q' to query logs, or 'e' to exit:");
 			long start;
 			try {
 				input = bufferedReader.readLine();
@@ -85,6 +85,8 @@ public class RemoteGrepApplication {
 					String ipAndPort = bufferedReader.readLine();
 					// TODO: add isValid() check on input
 					addTaskForNode(new Node(ipAndPort));
+				} else if ("d".equals(input.trim())) {
+				    addDefaultNodes();
 				} else if ("q".equals(input.trim())) {
 					start = System.currentTimeMillis();
 					System.out.print("Enter grep regex>");
@@ -112,6 +114,16 @@ public class RemoteGrepApplication {
 			LOGGER.warning("RemoteGrepApplication - main- failed to close inputstreamreader");
 		}
 	}
+
+    /**
+     * 
+     */
+    public static void addDefaultNodes()
+    {
+        for (String server : servers) {
+            addTaskForNode(new Node(server));
+        }
+    }
 
     /**
      * 
@@ -150,11 +162,11 @@ public class RemoteGrepApplication {
 	/**
 	 * Listens on port 4444 for incoming grep requests
 	 */
-	private void startGrepServer() {
+	public void startGrepServer() {
 		grepServer.start();
 	}
 	
-	private void stopGrepServer() {
+	public void stopGrepServer() {
 		greptask1 = new GrepTask(new Node("localhost", 4444));
 		greptask1.setRegex("<QUIT>");
 		greptask1.start();

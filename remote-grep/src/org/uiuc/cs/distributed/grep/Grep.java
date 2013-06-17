@@ -62,9 +62,9 @@ public class Grep
         String result = "";
         try
         {
-            process = new ProcessBuilder("grep", "-rni", regex, "/tmp/cs425_momontbowling2/machine*").start();
-
-
+            // Use a shell so we can use wildcard (*) for the machine.*.log with ProcessBuilder
+            process = new ProcessBuilder("/bin/sh", "-c", "grep " + regex + " /tmp/cs425_momontbowling2/machine*").redirectErrorStream(true).start();
+            
             BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line = "";
             StringBuilder builder = new StringBuilder();
