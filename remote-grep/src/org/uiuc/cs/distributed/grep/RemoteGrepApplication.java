@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -14,7 +16,8 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 /**
- * Main entry to the distributed grep program. This should be started on each node you want to query. The default nodes are linux[5-7] whose IP's are hard
+ * Main entry to the distributed grep program. This should be started on each
+ * node you want to query. The default nodes are linux[5-7] whose IP's are hard
  * coded. The default log location is in /tmp/cs425_momontbowling2/.
  * 
  * @author matt
@@ -22,8 +25,8 @@ import java.util.logging.SimpleFormatter;
  */
 public class RemoteGrepApplication
 {
-
-    public static final String           logLocation = "/tmp/cs425_momontbowling2";
+	public static final String           logLocation = "/tmp/cs425_momontbowling2";
+    private static final String LINUX_7 = "130.126.112.148:4444";
 
     private static Logger                LOGGER;
     private static Handler               logFileHandler;
@@ -34,8 +37,12 @@ public class RemoteGrepApplication
     private static RemoteGrepApplication app         = RemoteGrepApplication.getInstance();
     private static String[]              servers     = new String[]
                                                      {
-            "130.126.112.148:4444", "130.126.112.146:4444", "130.126.112.117:4444"
+            LINUX_7, "130.126.112.146:4444", "130.126.112.117:4444"
                                                      };
+    public List<String> groupMemebershipList;
+
+    private String hostaddress = "";
+    
 
     private RemoteGrepApplication()
     {
@@ -75,24 +82,30 @@ public class RemoteGrepApplication
         return instance;
     }
 
-    /**
-     * The main driver function. This function calls sever preparation function, prompts the user for input, and delegates tasks based on the user's requests.
-     * 
-     * @param args - ignored
-     */
+	/**
+	 * The main driver function. This function calls sever preparation function,
+	 * prompts the user for input, and delegates tasks based on the user's
+	 * requests.
+	 * 
+	 * @param args
+	 *            - ignored
+	 */
     public static void main(String[] args)
     {
 
         app.startGrepServer();  // listen for incoming grep requests.
-
-        String hostaddress = "";
+		app.groupMemebershipList = Collections.synchronizedList(new ArrayList<String>());
+		app.groupMemebershipList.add(LINUX_7); // Make linux7 the contact node.
+		
+        new GroupServerThread().start();
+        
         try
         {
-            hostaddress = InetAddress.getLocalHost().getHostAddress();
+            app.hostaddress = InetAddress.getLocalHost().getHostAddress();
 
-            System.out.println("RemoteGrepApplication Server started on: " + hostaddress + ":"
+            System.out.println("RemoteGrepApplication Server started on: " + app.hostaddress + ":"
                     + app.grepServer.getPort());
-            LOGGER.info("RemoteGrepApplication Server started on: " + hostaddress + ":" + app.grepServer.getPort());
+            LOGGER.info("RemoteGrepApplication Server started on: " + app.hostaddress + ":" + app.grepServer.getPort());
         }
         catch (UnknownHostException e1)
         {
@@ -105,8 +118,8 @@ public class RemoteGrepApplication
 
         while (true)
         {
-            System.out.println("Type 'a' to add node ('d' adds default nodes), 'q' to query logs, or 'e' to exit:");
-            long start;
+            promptUserForInput();
+            
             try
             {
                 input = bufferedReader.readLine();
@@ -118,6 +131,10 @@ public class RemoteGrepApplication
                     String ipAndPort = bufferedReader.readLine();
                     addTaskForNode(new Node(ipAndPort));
                 }
+                else if("j".equals(input.trim()))
+                {
+                	joinGroup();
+                }
                 // Add Default nodes
                 else if ( "d".equals(input.trim()) )
                 {
@@ -126,12 +143,14 @@ public class RemoteGrepApplication
                 // Run grep
                 else if ( "q".equals(input.trim()) )
                 {
-                    start = System.currentTimeMillis();
                     System.out.print("Enter grep regex>");
                     String regex = bufferedReader.readLine();
+                    
+                    long start = System.currentTimeMillis();
                     runGrepTasks(regex);
                     joinGrepTasks();
                     long end = System.currentTimeMillis();
+                    
                     System.out.println("Total Time: " + (end - start) + "ms");
                 }
                 // Exit
@@ -164,6 +183,16 @@ public class RemoteGrepApplication
         }
     }
 
+	private static void promptUserForInput() {
+		if (!app.groupMemebershipList.contains(app.hostaddress)) 
+		{
+			System.out.println("(j) Join group");
+		}
+		System.out.println("(a) Add node ((d) adds default nodes)");
+		System.out.println("(q) Query logs");
+		System.out.println("(e) Exit");
+	}
+
     /**
      * Creates a task for each of the default linux nodes (linux[5-7])
      */
@@ -175,6 +204,23 @@ public class RemoteGrepApplication
         }
     }
 
+    public static void joinGroup()
+    {
+    	// Send IP to Linux7
+    	new GroupClient(new Node(app.hostaddress+":4445")).start();
+    }
+    
+    public static void addToGroup()
+    {
+    	app.groupMemebershipList.add(app.hostaddress);
+    	LOGGER.info("Added node " + app.hostaddress +" to group.");
+    	
+    	for(String member : app.groupMemebershipList)
+    	{
+    		//notifyGroupChange(app.groupMemebershipList);
+    	}
+    }
+    
     /**
      * Waits for all of the grep tasks to complete and prints their results to the console
      */
