@@ -26,20 +26,24 @@ import java.util.logging.SimpleFormatter;
 public class RemoteGrepApplication
 {
 	public static final String           logLocation = "/tmp/cs425_momontbowling2";
-    private static final String LINUX_7 = "130.126.112.148:4444";
-
+    private static final String 		 LINUX_5 	 = "130.126.112.148";
+    private static final String 		 TCP_PORT	 = "4444";
+    private static final String 		 UDP_PORT	 = "4445";
     private static Logger                LOGGER;
     private static Handler               logFileHandler;
     private static RemoteGrepApplication instance    = null;
     private GrepServer                   grepServer  = new GrepServer();
+    private GroupServer					 groupServer = new GroupServer();
     public ArrayList<GrepTask>           grepTasks;
     public GrepTask                      taskToStopServer;
     private static RemoteGrepApplication app         = RemoteGrepApplication.getInstance();
     private static String[]              servers     = new String[]
                                                      {
-            LINUX_7, "130.126.112.146:4444", "130.126.112.117:4444"
+            LINUX_5 + ":" + TCP_PORT, "130.126.112.146:4444", "130.126.112.117:4444"
                                                      };
-    public List<String> groupMemebershipList;
+	private static GroupClient groupClient;
+    public static List<String> groupMemebershipList;
+	public static boolean alive = true;
 
     private String hostaddress = "";
     
@@ -64,6 +68,7 @@ public class RemoteGrepApplication
         LOGGER.setUseParentHandlers(false);
         logFileHandler.setFormatter(new SimpleFormatter());
         logFileHandler.setLevel(Level.INFO);
+
         LOGGER.addHandler(logFileHandler);
         this.grepTasks = new ArrayList<GrepTask>();
     }
@@ -94,10 +99,10 @@ public class RemoteGrepApplication
     {
 
         app.startGrepServer();  // listen for incoming grep requests.
-		app.groupMemebershipList = Collections.synchronizedList(new ArrayList<String>());
-		app.groupMemebershipList.add(LINUX_7); // Make linux7 the contact node.
+		RemoteGrepApplication.groupMemebershipList = Collections.synchronizedList(new ArrayList<String>());
+		RemoteGrepApplication.groupMemebershipList.add(LINUX_5); // Make linux5 the contact node.
 		
-        new GroupServerThread().start();
+        app.startGroupServer(); 
         
         try
         {
@@ -124,13 +129,14 @@ public class RemoteGrepApplication
             {
                 input = bufferedReader.readLine();
                 
-                // Add a node
+                // Add a node to query
                 if ( "a".equals(input.trim()) )
                 {
                     System.out.println("Enter IP and port (e.g. \"1.2.3.4:4444\"): ");
                     String ipAndPort = bufferedReader.readLine();
                     addTaskForNode(new Node(ipAndPort));
                 }
+                // Add node to group membership list
                 else if("j".equals(input.trim()))
                 {
                 	joinGroup();
@@ -157,6 +163,7 @@ public class RemoteGrepApplication
                 else if ( "e".equals(input.trim()) )
                 {
                     app.stopGrepServer();
+                    app.stopGroupServer();
                     break;
                 }
             }
@@ -184,7 +191,7 @@ public class RemoteGrepApplication
     }
 
 	private static void promptUserForInput() {
-		if (!app.groupMemebershipList.contains(app.hostaddress)) 
+		if (!RemoteGrepApplication.groupMemebershipList.contains(app.hostaddress)) 
 		{
 			System.out.println("(j) Join group");
 		}
@@ -207,15 +214,16 @@ public class RemoteGrepApplication
     public static void joinGroup()
     {
     	// Send IP to Linux7
-    	new GroupClient(new Node(app.hostaddress+":4445")).start();
+    	groupClient = new GroupClient(new Node(LINUX_5 + ":" + UDP_PORT));
+    	groupClient.start();
     }
     
     public static void addToGroup()
     {
-    	app.groupMemebershipList.add(app.hostaddress);
+    	RemoteGrepApplication.groupMemebershipList.add(app.hostaddress);
     	LOGGER.info("Added node " + app.hostaddress +" to group.");
     	
-    	for(String member : app.groupMemebershipList)
+    	for(String member : RemoteGrepApplication.groupMemebershipList)
     	{
     		//notifyGroupChange(app.groupMemebershipList);
     	}
@@ -267,6 +275,23 @@ public class RemoteGrepApplication
         app.grepTasks.add(new GrepTask(node));
     }
 
+    public void startGroupServer()
+    {
+    	groupServer.start();
+    }
+    
+    public void stopGroupServer()
+    {
+    	RemoteGrepApplication.alive = false;
+    	try {
+			groupServer.join();
+			groupClient.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			LOGGER.warning("Could not join GroupServer thread. Abort ship! Ctrl+C");
+		}
+    }
+    
     /**
      * Listens on port default port for incoming grep requests
      */
