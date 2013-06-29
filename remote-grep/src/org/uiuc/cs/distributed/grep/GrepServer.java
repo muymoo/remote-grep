@@ -25,7 +25,7 @@ import java.util.logging.SimpleFormatter;
 public class GrepServer extends Thread
 {
     private ServerSocket   serverSocket = null;
-    private int            serverPort   = 4444;
+    private int            serverPort   = RemoteGrepApplication.TCP_PORT;
     private boolean        listening    = true;
     private boolean        foundPort;
 

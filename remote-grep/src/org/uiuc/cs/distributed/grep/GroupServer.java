@@ -41,7 +41,7 @@ public class GroupServer extends Thread {
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
 				socket.receive(packet);
 				System.out.println("Oooh, somebody wants to join the party.");
-				String timestamp = new String (packet.getData(), 0, packet.getLength());
+				String timestamp = new String (packet.getData(), 0, packet.getLength(), "UTF-8");
 
 				if(timestamp.equalsIgnoreCase("QUIT"))
 				{
