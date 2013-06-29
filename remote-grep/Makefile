@@ -9,8 +9,7 @@ all:
 # the main driver for the program
 # needs to be run on each node
 run:
-	mkdir -p /tmp/cs425_momontbowling2/logs
-	java -cp classes org.uiuc.cs.distributed.grep.RemoteGrepApplication
+	java -cp bin org.uiuc.cs.distributed.grep.RemoteGrepApplication
 
 # this target runs the unit tests
 # The other two nodes need to be up and running before unit tests can run ('make run' on those severs first)
@@ -27,7 +26,7 @@ clean:
 createLogs:
 	mkdir -p /tmp/cs425_momontbowling2/logs
 	rm -f /tmp/cs425_momontbowling2/*.log
-	java -cp testclasses org.uiuc.cs.distributed.grep.util.TestLogs
+	java -cp bin/test org.uiuc.cs.distributed.grep.util.TestLogs
 
 info:
 	echo "Java 1.6, Junit 4.11, by Evan Bowling and Matt Momont"

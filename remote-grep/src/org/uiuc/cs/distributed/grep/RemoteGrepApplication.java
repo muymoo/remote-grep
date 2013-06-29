@@ -117,7 +117,7 @@ public class RemoteGrepApplication
             hostaddress = InetAddress.getLocalHost().getHostAddress();
 
             System.out.println("RemoteGrepApplication - Server started on: " + hostaddress + ":"
-                    + app.grepServer.getPort());
+                    + grepServer.getPort());
             LOGGER.info("RemoteGrepApplication - run() - Server started on: " + hostaddress + ":" + grepServer.getPort());
         }
         catch (UnknownHostException e1)
@@ -126,7 +126,7 @@ public class RemoteGrepApplication
         }
         
 		// If this is the introducer node, start listening for incoming requests now.
-		if(app.hostaddress.equals(LINUX_5))
+		if(hostaddress.equals(LINUX_5))
 		{	
 			startGroupServer();
 			System.out.println("Group Server started");
@@ -177,8 +177,8 @@ public class RemoteGrepApplication
                 // Exit
                 else if ( "e".equals(input.trim()) )
                 {
-                    app.stopGrepServer();
-                    app.stopGroupServer();
+                    stopGrepServer();
+                    stopGroupServer();
                     break;
                 }
             }
@@ -207,7 +207,7 @@ public class RemoteGrepApplication
 
 
 	private void promptUserForInput() {
-		if (RemoteGrepApplication.groupMemebershipList.contains(app.hostaddress)) 
+		if (RemoteGrepApplication.groupMemebershipList.contains(hostaddress)) 
 		{
 			System.out.println("This node is part of the group list already.");
 		} else 
@@ -244,12 +244,12 @@ public class RemoteGrepApplication
     
     public void addToGroup()
     {
-    	RemoteGrepApplication.groupMemebershipList.add(app.hostaddress);
-    	LOGGER.info("Added node " + app.hostaddress +" to group.");
+    	RemoteGrepApplication.groupMemebershipList.add(hostaddress);
+    	LOGGER.info("Added node " + hostaddress +" to group.");
     	
     	for(String member : RemoteGrepApplication.groupMemebershipList)
     	{
-    		//notifyGroupChange(app.groupMemebershipList);
+    		//notifyGroupChange(groupMemebershipList);
     	}
     }
     
@@ -258,7 +258,7 @@ public class RemoteGrepApplication
      */
     public void joinGrepTasks()
     {
-        for (GrepTask grepTask : app.grepTasks)
+        for (GrepTask grepTask : grepTasks)
         {
             try
             {
@@ -271,7 +271,7 @@ public class RemoteGrepApplication
             System.out.println("From node: " + grepTask.getNode().toString());
             System.out.print(grepTask.getResult());
         }
-        app.grepTasks.clear();
+        grepTasks.clear();
         System.out.println("Grep Successful: Removed all nodes. Please re-add nodes you would like to search again.");
     }
 
@@ -282,7 +282,7 @@ public class RemoteGrepApplication
      */
     public void runGrepTasks(String regex)
     {
-        for (GrepTask grepTask : app.grepTasks)
+        for (GrepTask grepTask : grepTasks)
         {
             grepTask.setRegex(regex);
             grepTask.start();
@@ -296,7 +296,7 @@ public class RemoteGrepApplication
      */
     public void addTaskForNode(Node node)
     {
-        app.grepTasks.add(new GrepTask(node));
+        grepTasks.add(new GrepTask(node));
     }
 
     public void startGroupServer()
@@ -375,6 +375,7 @@ public class RemoteGrepApplication
     		
     		app.run();
     	} else {
+    		
     		printUsage();
     		System.exit(-1);
     	}

@@ -43,7 +43,7 @@ public class RemoteGrepApplicationTest
     @BeforeClass
     public static void initialize()
     {
-        remoteGrepApplication = RemoteGrepApplication.getInstance();
+        remoteGrepApplication = RemoteGrepApplication.getInstance(RemoteGrepApplication.logLocation);
         remoteGrepApplication.startGrepServer();
 
         System.setOut(new PrintStream(outContent));
@@ -59,7 +59,7 @@ public class RemoteGrepApplicationTest
     @Before
     public void setUp()
     {
-        RemoteGrepApplication.addDefaultNodes();
+        remoteGrepApplication.addDefaultNodes();
         /*
          * If running locally, you can uncomment this line and comment out one to add default nodes.
          * RemoteGrepApplication.addTaskForNode(new Node("localhost:4444"));
@@ -69,40 +69,40 @@ public class RemoteGrepApplicationTest
     @Test
     public void grepForDoubleLine()
     {
-        RemoteGrepApplication.runGrepTasks("'There should be 2 of me.'");
-        RemoteGrepApplication.joinGrepTasks();
+        remoteGrepApplication.runGrepTasks("'There should be 2 of me.'");
+        remoteGrepApplication.joinGrepTasks();
         Assert.assertTrue(outContent.toString().contains("There should be 2 of me.\nThere should be 2 of me.\n"));
     }
 
     @Test
     public void grepWithFlags()
     {
-        RemoteGrepApplication.runGrepTasks("-rni '2 of me'");
-        RemoteGrepApplication.joinGrepTasks();
+        remoteGrepApplication.runGrepTasks("-rni '2 of me'");
+        remoteGrepApplication.joinGrepTasks();
         Assert.assertTrue(outContent.toString().contains("101:There should be 2 of me."));
     }
 
     @Test
     public void grepSevere()
     {
-        RemoteGrepApplication.runGrepTasks("-rni severe");
-        RemoteGrepApplication.joinGrepTasks();
+        remoteGrepApplication.runGrepTasks("-rni severe");
+        remoteGrepApplication.joinGrepTasks();
         Assert.assertTrue(outContent.toString().contains("SEVERE"));
     }
 
     @Test
     public void grepWarning()
     {
-        RemoteGrepApplication.runGrepTasks("-rni warning");
-        RemoteGrepApplication.joinGrepTasks();
+        remoteGrepApplication.runGrepTasks("-rni warning");
+        remoteGrepApplication.joinGrepTasks();
         Assert.assertTrue(outContent.toString().contains("WARNING"));
     }
 
     @Test
     public void grepRegex()
     {
-        RemoteGrepApplication.runGrepTasks("'[1-9]\\+ of me'");
-        RemoteGrepApplication.joinGrepTasks();
+        remoteGrepApplication.runGrepTasks("'[1-9]\\+ of me'");
+        remoteGrepApplication.joinGrepTasks();
         Assert.assertTrue(outContent.toString().contains("There should be 2 of me.\nThere should be 2 of me.\n"));
     }
 }
