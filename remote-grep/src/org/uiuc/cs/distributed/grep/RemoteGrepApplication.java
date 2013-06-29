@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -43,7 +45,6 @@ public class RemoteGrepApplication
                                                      };
 	private static GroupClient groupClient;
     public static List<String> groupMemebershipList;
-	public static boolean alive = true;
 
     private String hostaddress = "";
     
@@ -99,11 +100,10 @@ public class RemoteGrepApplication
     {
 
         app.startGrepServer();  // listen for incoming grep requests.
-		RemoteGrepApplication.groupMemebershipList = Collections.synchronizedList(new ArrayList<String>());
+		
+        RemoteGrepApplication.groupMemebershipList = Collections.synchronizedList(new ArrayList<String>());
 		RemoteGrepApplication.groupMemebershipList.add(LINUX_5); // Make linux5 the contact node.
 		
-        app.startGroupServer(); 
-        
         try
         {
             app.hostaddress = InetAddress.getLocalHost().getHostAddress();
@@ -116,6 +116,13 @@ public class RemoteGrepApplication
         {
             LOGGER.warning("RemoteGrepApplication - main- failed to identify host");
         }
+        
+		// If this is the introducer node, start listening for incoming requests now.
+		if(app.hostaddress.equals(LINUX_5))
+		{	
+			app.startGroupServer();
+			System.out.println("Group Server started");
+		}
 
         InputStreamReader inputStreamReader = new InputStreamReader(System.in);
         BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
@@ -191,7 +198,10 @@ public class RemoteGrepApplication
     }
 
 	private static void promptUserForInput() {
-		if (!RemoteGrepApplication.groupMemebershipList.contains(app.hostaddress)) 
+		if (RemoteGrepApplication.groupMemebershipList.contains(app.hostaddress)) 
+		{
+			System.out.println("This node is part of the group list already.");
+		} else 
 		{
 			System.out.println("(j) Join group");
 		}
@@ -282,9 +292,9 @@ public class RemoteGrepApplication
     
     public void stopGroupServer()
     {
-    	RemoteGrepApplication.alive = false;
-    	try {
-    		
+    	groupServer.stopServer();
+    	
+    	try {		
 			groupServer.join();
 			groupClient.join();
 		} catch (InterruptedException e) {

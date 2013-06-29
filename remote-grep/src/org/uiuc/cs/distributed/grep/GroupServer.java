@@ -8,32 +8,37 @@ import java.net.SocketException;
 
 public class GroupServer extends Thread {
 	protected DatagramSocket socket = null;
-	protected boolean alive = true;
-	
+	protected volatile boolean alive = true;
+
 	public GroupServer() {
 		this("GroupServerThread");
 	}
 
 	public GroupServer(String name)  {
 		super(name);
-        
+	}
+
+	public void stopServer()
+	{
+		alive = false;
+	}
+	
+	public void run() {
 		try {
 			socket = new DatagramSocket(4445);
 		} catch (SocketException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-	}
-
-	public void run() {
-
 		while (alive) {
 			try {
 				byte[] buf = new byte[256];
 
-				// receive request
+				// receive join request
+				System.out.println("Waiting to recieve join requests. Hit me up.");
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
 				socket.receive(packet);
+				System.out.println("Oooh, somebody wants to join the party.");
 				String timestamp = new String (packet.getData(), 0, packet.getLength());
 
 				if(timestamp.equalsIgnoreCase("QUIT"))
@@ -50,21 +55,20 @@ public class GroupServer extends Thread {
 				
 				// Notify all nodes of group list change
 				byte[] groupListBuffer = new byte[256];
-				String groupList = RemoteGrepApplication.groupMemebershipList.toString();
+				System.out.println("Better tell my friends about who's here. I'll send a group text.");
+				String groupList = "HIIIII";//RemoteGrepApplication.groupMemebershipList.toString();
 				groupListBuffer = groupList.getBytes();
-				
-				for(String node : RemoteGrepApplication.groupMemebershipList){
-					// Send updated membership list
-					if(!node.equals(socket.getInetAddress()))
-					{
-						// Don't send updated list to itself
-						break;
-					}
-					
-					DatagramPacket groupListPacket = new DatagramPacket(groupListBuffer, groupListBuffer.length, InetAddress.getByName(node),
-							4445);
-					socket.send(groupListPacket);
-				}
+
+				System.out.println("Notifying group about membership change.");
+				InetAddress group = InetAddress.getByName("228.5.6.7");
+
+				DatagramPacket groupListPacket = new DatagramPacket(
+						groupListBuffer, groupListBuffer.length, group, 4446);
+				socket.send(groupListPacket);
+				System.out.println("Group text complete. Let's see if anyone else shows up.");
+				//System.out.println("Actualy, nevermind, let's just quit while we're ahead.");
+			//	alive = false;
+
 			} catch (IOException e) {
 				e.printStackTrace();
 				alive = false;
