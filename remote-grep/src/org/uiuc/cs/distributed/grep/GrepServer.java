@@ -24,9 +24,6 @@ import java.util.logging.SimpleFormatter;
  */
 public class GrepServer extends Thread
 {
-    private static Logger  LOGGER;
-    private static Handler logFileHandler;
-
     private ServerSocket   serverSocket = null;
     private int            serverPort   = 4444;
     private boolean        listening    = true;
@@ -38,27 +35,6 @@ public class GrepServer extends Thread
     public GrepServer()
     {
         super("GrepServerThread");
-        String logFileLocation = RemoteGrepApplication.logLocation + File.separator + "logs" + File.separator
-                + "grepserver.log";
-
-        try
-        {
-            logFileHandler = new FileHandler(logFileLocation);
-        }
-        catch (SecurityException e)
-        {
-            e.printStackTrace();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-        LOGGER = Logger.getLogger("GrepServer");
-        LOGGER.setUseParentHandlers(false);
-        logFileHandler.setFormatter(new SimpleFormatter());
-        logFileHandler.setLevel(Level.INFO);
-        LOGGER.addHandler(logFileHandler);
-
         this.foundPort = false;
     }
 
@@ -92,15 +68,15 @@ public class GrepServer extends Thread
             }
             if ( !this.foundPort )
             {
-                LOGGER.severe("GrepServer - run - Could not listen on port: " + serverPort);
+                RemoteGrepApplication.LOGGER.severe("GrepServer - run - Could not listen on port: " + serverPort);
                 System.exit(-1);
             }
-            LOGGER.info("GrepServer - run - Server started on socket: " + serverPort);
+            RemoteGrepApplication.LOGGER.info("GrepServer - run - Server started on socket: " + serverPort);
 
             while (listening)
             {
                 Socket clientSocket = serverSocket.accept();
-                LOGGER.info("GrepServer - run - accepted connection from: " + clientSocket.getInetAddress() + ":"
+                RemoteGrepApplication.LOGGER.info("GrepServer - run - accepted connection from: " + clientSocket.getInetAddress() + ":"
                         + clientSocket.getPort());
 
                 // Setup our input/output streams
@@ -113,7 +89,7 @@ public class GrepServer extends Thread
                 // Loop until grep doesn't return any more results
                 while ((clientInput = in.readLine()) != null)
                 {
-                    LOGGER.info("GrepServer - run - clientInput: " + clientInput);
+                    RemoteGrepApplication.LOGGER.info("GrepServer - run - clientInput: " + clientInput);
                     if ( clientInput.equals("<QUIT>") )
                     {
                         listening = false;
@@ -121,7 +97,7 @@ public class GrepServer extends Thread
                         break;
                     }
                     clientOutput = grep.search(clientInput); // run grep
-                    LOGGER.info("GrepServer - run - clientOutput: " + clientOutput);
+                    RemoteGrepApplication.LOGGER.info("GrepServer - run - clientOutput: " + clientOutput);
                     clientOutput += "<END>\n";
                     out.print(clientOutput); // Send results back to client
                     out.println("<END>");
@@ -134,11 +110,11 @@ public class GrepServer extends Thread
             }
 
             serverSocket.close();
-            LOGGER.info("GrepServer - run - socket closed, shutting down server.");
+            RemoteGrepApplication.LOGGER.info("GrepServer - run - socket closed, shutting down server.");
         }
         catch (IOException e)
         {
-            LOGGER.info("GrepServer - run - IOException: " + e.getMessage() + " stack trace: "
+            RemoteGrepApplication.LOGGER.info("GrepServer - run - IOException: " + e.getMessage() + " stack trace: "
                     + e.getStackTrace().toString());
         }
     }

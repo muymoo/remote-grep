@@ -15,26 +15,9 @@ import java.util.logging.SimpleFormatter;
 
 public class GroupClient extends Thread {
 	private Node node;
-	private static Logger LOGGER;
-	private static Handler logFileHandler;
 
 	GroupClient(Node node) {
 		this.node = node;
-		String logFileLocation = RemoteGrepApplication.logLocation
-				+ File.separator + "logs" + File.separator + "groupclient.log";
-		try {
-			logFileHandler = new FileHandler(logFileLocation);
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		LOGGER = Logger.getLogger("GrepServer");
-		LOGGER.setUseParentHandlers(false);
-		logFileHandler.setFormatter(new SimpleFormatter());
-		logFileHandler.setLevel(Level.INFO);
-		LOGGER.addHandler(logFileHandler);
 	}
 
 	// Asks to join LINUX_7 group and joins multicast group
@@ -92,7 +75,7 @@ public class GroupClient extends Thread {
 		// So we can uniquely identify this node (we can get IP/port from packet
 		// by default)
 		String joinRequest = String.valueOf(System.currentTimeMillis());
-		buf = joinRequest.getBytes();
+		buf = joinRequest.getBytes("UTF-8");
 
 		InetAddress address = null;
 		try {
@@ -101,8 +84,7 @@ public class GroupClient extends Thread {
 			e.printStackTrace();
 		}
 
-		DatagramPacket packet = new DatagramPacket(buf, buf.length, address,
-				4445);
+		DatagramPacket packet = new DatagramPacket(buf, buf.length, address, 4445);
 		try {
 			// Request to join group memebership list
 			socket.send(packet);
