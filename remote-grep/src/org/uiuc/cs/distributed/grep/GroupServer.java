@@ -21,6 +21,8 @@ public class GroupServer extends Thread {
 	public void stopServer()
 	{
 		alive = false;
+		super.interrupt();
+		socket.close();
 	}
 	
 	public void run() {
@@ -66,11 +68,8 @@ public class GroupServer extends Thread {
 						groupListBuffer, groupListBuffer.length, group, 4446);
 				socket.send(groupListPacket);
 				System.out.println("Group text complete. Let's see if anyone else shows up.");
-				//System.out.println("Actualy, nevermind, let's just quit while we're ahead.");
-			//	alive = false;
 
 			} catch (IOException e) {
-				e.printStackTrace();
 				alive = false;
 			}
 		}

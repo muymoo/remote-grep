@@ -226,6 +226,11 @@ public class RemoteGrepApplication
     	// Send IP to Linux7
     	groupClient = new GroupClient(new Node(LINUX_5 + ":" + UDP_PORT));
     	groupClient.start();
+    	try {
+			groupClient.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
     }
     
     public static void addToGroup()
@@ -292,15 +297,16 @@ public class RemoteGrepApplication
     
     public void stopGroupServer()
     {
-    	groupServer.stopServer();
-    	
-    	try {		
-			groupServer.join();
-			groupClient.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			LOGGER.warning("Could not join GroupServer thread. Abort ship! Ctrl+C");
-		}
+    	if(groupServer.isAlive())
+    	{
+    		groupServer.stopServer();
+        	try {		
+    			groupServer.join();
+    		} catch (InterruptedException e) {
+    			e.printStackTrace();
+    			LOGGER.warning("Could not join GroupServer thread. Abort ship! Ctrl+C");
+    		}
+    	}
     }
     
     /**
