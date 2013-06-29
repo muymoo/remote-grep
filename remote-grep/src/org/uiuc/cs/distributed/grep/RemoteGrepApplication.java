@@ -284,6 +284,7 @@ public class RemoteGrepApplication
     {
     	RemoteGrepApplication.alive = false;
     	try {
+    		
 			groupServer.join();
 			groupClient.join();
 		} catch (InterruptedException e) {

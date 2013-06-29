@@ -26,7 +26,7 @@ public class GroupServer extends Thread {
 
 	public void run() {
 
-		while (RemoteGrepApplication.alive) {
+		while (alive) {
 			try {
 				byte[] buf = new byte[256];
 
@@ -36,6 +36,13 @@ public class GroupServer extends Thread {
 				String timestamp = new String (packet.getData(), 0, packet.getLength());
 				// Long.valueOf(
 				// Add node to group list
+				
+				if(timestamp.equalsIgnoreCase("QUIT"))
+				{
+					System.out.println("GroupServer " + socket.getLocalAddress().toString() + " shutting down.");
+					alive = false;
+					break;
+				}
 				
 				System.out.println("Timestamp added: " + timestamp);
 				
@@ -52,7 +59,7 @@ public class GroupServer extends Thread {
 //				socket.send(packet);
 			} catch (IOException e) {
 				e.printStackTrace();
-				RemoteGrepApplication.alive = false;
+				alive = false;
 			}
 		}
 		socket.close();
