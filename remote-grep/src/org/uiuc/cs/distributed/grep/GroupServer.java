@@ -3,6 +3,7 @@ package org.uiuc.cs.distributed.grep;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 
 public class GroupServer extends Thread {
@@ -34,29 +35,36 @@ public class GroupServer extends Thread {
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
 				socket.receive(packet);
 				String timestamp = new String (packet.getData(), 0, packet.getLength());
-				// Long.valueOf(
-				// Add node to group list
-				
+
 				if(timestamp.equalsIgnoreCase("QUIT"))
 				{
 					System.out.println("GroupServer " + socket.getLocalAddress().toString() + " shutting down.");
 					alive = false;
 					break;
-				}
+				}		
 				
+				// Add node to group list				
 				System.out.println("Timestamp added: " + timestamp);
-				
 				RemoteGrepApplication.groupMemebershipList.add(timestamp + ":" +packet.getAddress().toString() + ":" + packet.getPort());
 				System.out.println("Group list: " + RemoteGrepApplication.groupMemebershipList.toString());
 				
-				// Update all nodes
+				// Notify all nodes of group list change
+				byte[] groupListBuffer = new byte[256];
+				String groupList = RemoteGrepApplication.groupMemebershipList.toString();
+				groupListBuffer = groupList.getBytes();
+				
 				for(String node : RemoteGrepApplication.groupMemebershipList){
 					// Send updated membership list
+					if(!node.equals(socket.getInetAddress()))
+					{
+						// Don't send updated list to itself
+						break;
+					}
+					
+					DatagramPacket groupListPacket = new DatagramPacket(groupListBuffer, groupListBuffer.length, InetAddress.getByName(node),
+							4445);
+					socket.send(groupListPacket);
 				}
-//				InetAddress address = packet.getAddress();
-//				int port = packet.getPort();
-//				packet = new DatagramPacket(buf, buf.length, address, port);
-//				socket.send(packet);
 			} catch (IOException e) {
 				e.printStackTrace();
 				alive = false;
