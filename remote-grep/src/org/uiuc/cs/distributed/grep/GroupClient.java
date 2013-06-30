@@ -19,37 +19,54 @@ public class GroupClient extends Thread {
 	public void run() {
 		boolean result = sendJoinRequest();
 		if (result) {
+			MulticastSocket socket = null;
+			InetAddress group = null;
 			try {
-				MulticastSocket socket = new MulticastSocket(4446);
-				InetAddress group = InetAddress.getByName("228.5.6.7");
+				socket = new MulticastSocket(4446);
+				group = InetAddress.getByName("228.5.6.7");
+				
 				socket.joinGroup(group);
 				System.out.println("Joining UDP Group 228.5.6.7");
-
-				byte[] buf = new byte[256];
-				DatagramPacket packet = new DatagramPacket(buf, buf.length);
-				System.out.println("Waiting to recieve broadcast. Ctrl-C to 'crash' server.");
-				socket.receive(packet);
-				System.out
-						.println("Recieved new packet. I wonder what it could hold?");
-				String message = new String(packet.getData());
-
-				// Update local groupmembership list
-				System.out
-						.println("It's a new membership list! I better update mine.");
-				Node newNode = parseNodeFromMessage(message);
 				
-				RemoteGrepApplication.groupMemebershipList.add(newNode);
-				System.out.println(RemoteGrepApplication.groupMemebershipList);
+				while(isAlive()){
+					byte[] buf = new byte[256];
+					DatagramPacket packet = new DatagramPacket(buf, buf.length);
+					System.out
+							.println("Waiting to recieve broadcast. Ctrl-C to stop server.");
+					socket.receive(packet);
+					System.out
+							.println("Recieved new packet. I wonder what it could hold?");
+					String message = new String(packet.getData());
 
-				// Cleanup
-				System.out.println("Leaving group. Peace.");
-				socket.leaveGroup(group);
-				socket.close();
+					System.out.println("It's a new membership update!");
+
+					Node updatedNode = parseNodeFromMessage(message);
+					String action = parseActionFromMessage(message);
+
+					if (action.equals("A")) {
+						RemoteGrepApplication.groupMembershipList
+								.add(updatedNode);
+					} else if (action.equals("R")) {
+						RemoteGrepApplication.groupMembershipList
+								.remove(updatedNode);
+					}
+
+					System.out.println("Updated membership list: "
+							+ RemoteGrepApplication.groupMembershipList);
+				}
 			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-		}
+				System.out.println("Leaving group. Peace.");
 
+				e1.printStackTrace();
+			} finally {
+				try {
+					socket.leaveGroup(group);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				socket.close();
+			}	
+		}
 	}
 
 	/**
@@ -114,13 +131,13 @@ public class GroupClient extends Thread {
 
 			if (addGroupMemberMessage.equalsIgnoreCase("END")) {
 				System.out.println("Recieved updated group list: "
-						+ RemoteGrepApplication.groupMemebershipList);
+						+ RemoteGrepApplication.groupMembershipList);
 				receivingGroupList = false;
 				break;
 			}
 
 			Node nodeToAdd = parseNodeFromMessage(addGroupMemberMessage);
-			RemoteGrepApplication.groupMemebershipList.add(nodeToAdd);
+			RemoteGrepApplication.groupMembershipList.add(nodeToAdd);
 		}
 
 		socket.close();
@@ -139,6 +156,11 @@ public class GroupClient extends Thread {
 		System.out.println("Message parts: " + parts[1] + " " + parts[2] + " "
 				+ parts[3]);
 		return new Node(parts[1], parts[2], Integer.valueOf(parts[3].trim()));
+	}
+	
+	private String parseActionFromMessage(String addGroupMemberMessage) {
+		String[] parts = addGroupMemberMessage.split(":");
+		return parts[0];
 	}
 
 	/** 

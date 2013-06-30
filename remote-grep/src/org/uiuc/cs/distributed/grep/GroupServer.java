@@ -5,6 +5,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 
 public class GroupServer extends Thread {
 	protected DatagramSocket socket = null;
@@ -37,67 +38,128 @@ public class GroupServer extends Thread {
 				byte[] buf = new byte[256];
 
 				// receive join request
-				System.out.println("Waiting to recieve join requests. Hit me up.");
+				System.out.println("Waiting to recieve join requests. Hit me up. (e) to exit");
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
 				socket.receive(packet);
 				System.out.println("Oooh, somebody wants to join the party.");
 				String timestamp = new String (packet.getData(), 0, packet.getLength(), "UTF-8");
-
-				if(timestamp.equalsIgnoreCase("QUIT"))
-				{
-					System.out.println("GroupServer " + socket.getLocalAddress().toString() + " shutting down.");
-					alive = false;
-					break;
-				}		
 				
 				// Add node to group list				
 				System.out.println("Timestamp added: " + timestamp);
-				Node newNode = new Node(timestamp, packet.getAddress().toString(), packet.getPort());
-				RemoteGrepApplication.groupMemebershipList.add(newNode);
-				System.out.println("Group list: " + RemoteGrepApplication.groupMemebershipList.toString());
+				Node newNode = new Node(timestamp, packet.getAddress().getHostAddress(), packet.getPort());
 				
-				
-				InetAddress address = packet.getAddress();
-				String addNodeMessage = "";
-				System.out.println("Sending current group list to new node: " + address.toString());
-				
-				// The new node doesn't have any members! Send current group list to new member. 
-				for(Node node : RemoteGrepApplication.groupMemebershipList)
+				if(!RemoteGrepApplication.groupMembershipList.contains(newNode))
 				{
-					addNodeMessage = "A:"+node.toString();
-					buf = addNodeMessage.getBytes();
-					DatagramPacket addNodePacket = new DatagramPacket(buf, buf.length, address,
-							4445);
-					System.out.println("Sending: " + addNodeMessage);
-					socket.send(addNodePacket);
+					System.out.println("We have not seen this node before, let's add it.");
+					addNewNode(newNode);
 				}
-				System.out.println("Sending END packet");
-				String endMessage = "END";
-				buf = endMessage.getBytes();
-				DatagramPacket endPacket = new DatagramPacket(buf, buf.length, address,
-						4445);
-				socket.send(endPacket);
+				else
+				{
+					System.out.println("This node is trying to rejoin, it must have crashed before.");
+					Node oldNode = RemoteGrepApplication.groupMembershipList.get(RemoteGrepApplication.groupMembershipList.indexOf(newNode));
+					// If the newNode's time stamp is greater than the old one, add it to the list
+					if(newNode.compareTo(oldNode) > 0)
+					{
+						// Replace old node with new node otherwise, ignore the new node, it must have been stuck in network land
+						removeNode(oldNode);
+						addNewNode(newNode);
+					} 
+					else 
+					{
+						System.out.println("Ignored node join request (too old): " + newNode.toString());
+					}	
+				}
 				
-				// Notify all nodes of group list change
-				byte[] groupListBuffer = new byte[256];
-				System.out.println("Better tell my friends about who's here. I'll send a group text.");
-				
-				String addNewestNodeMessage = "A:" + newNode;
-				groupListBuffer = addNewestNodeMessage.getBytes();
-
-				System.out.println("Notifying group about membership change.");
-				InetAddress group = InetAddress.getByName("228.5.6.7");
-
-				DatagramPacket groupListPacket = new DatagramPacket(
-						groupListBuffer, groupListBuffer.length, group, 4446);
-				socket.send(groupListPacket);
-				System.out.println("Group text complete. Let's see if anyone else shows up.");
+				System.out.println("Let's see if anyone else shows up.");
 
 			} catch (IOException e) {
 				alive = false;
 			}
 		}
 		socket.close();
+	}
+
+	/**
+	 * Removes a node from local list and sends updated to other nodes.
+	 * 
+	 * @param oldNode Node to remove from membershiplist
+	 */
+	private void removeNode(Node oldNode) {
+		RemoteGrepApplication.groupMembershipList.remove(oldNode);
+		System.out.println("Everyone should remove: " + oldNode);
+		try {
+			broadcast(oldNode, "R");
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Sends a multicast message to all nodes telling them to perform an action on this node in their list.
+	 * 
+	 * @param node Notify others about some change that happened to this node
+	 * @param action Could be an Add "A" or Remove "R" event
+	 * @throws UnknownHostException
+	 * @throws IOException
+	 */
+	private void broadcast(Node node, String action) throws UnknownHostException,
+			IOException {
+		// Notify all nodes of group list change
+		byte[] nodeChangedBuffer = new byte[256];
+		
+		String nodeChangedMessage = action + ":" + node;
+		nodeChangedBuffer = nodeChangedMessage.getBytes();
+
+		System.out.println("Notifying group about membership change: " + nodeChangedMessage);
+		InetAddress group = InetAddress.getByName("228.5.6.7");
+		DatagramPacket groupListPacket = new DatagramPacket(
+				nodeChangedBuffer, nodeChangedBuffer.length, group, 4446);
+		socket.send(groupListPacket);
+	}
+
+	private void sendGroupList(Node newNode) throws IOException {
+		byte[] buf;
+		InetAddress address = InetAddress.getByName(newNode.getIP());
+		String addNodeMessage = "";
+		System.out.println("Sending current group list to new node: " + address.getHostAddress());
+		
+		// The new node doesn't have any members! Send current group list to new member. 
+		for(Node node : RemoteGrepApplication.groupMembershipList)
+		{
+			addNodeMessage = "A:"+node.toString();
+			buf = addNodeMessage.getBytes();
+			DatagramPacket addNodePacket = new DatagramPacket(buf, buf.length, address,
+					4445);
+			System.out.println("Sending: " + addNodeMessage);
+			socket.send(addNodePacket);
+		}
+		
+		System.out.println("Sending END packet");
+		String endMessage = "END";
+		buf = endMessage.getBytes();
+		DatagramPacket endPacket = new DatagramPacket(buf, buf.length, address,
+				4445);
+		socket.send(endPacket);
+	}
+
+	private void addNewNode(Node newNode) {
+		RemoteGrepApplication.groupMembershipList.add(newNode);
+		System.out.println("New Node added successfully: " + newNode.toString());
+		System.out.println("Group list: " + RemoteGrepApplication.groupMembershipList.toString());
+		
+		try {
+			sendGroupList(newNode);
+			broadcast(newNode, "A");
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }

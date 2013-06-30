@@ -39,7 +39,7 @@ public class RemoteGrepApplication {
 	private static String[] servers = new String[] { LINUX_5 + ":" + TCP_PORT,
 			"130.126.112.146:4444", "130.126.112.117:4444" };
 	private static GroupClient groupClient;
-	public static List<Node> groupMemebershipList = Collections
+	public static List<Node> groupMembershipList = Collections
 			.synchronizedList(new ArrayList<Node>());
 
 	private String hostaddress = "";
@@ -114,7 +114,7 @@ public class RemoteGrepApplication {
 			String timestamp = String.valueOf(System.currentTimeMillis());
 			Node newNode = new Node(timestamp, hostaddress,
 					Integer.valueOf(UDP_PORT));
-			groupMemebershipList.add(newNode);
+			groupMembershipList.add(newNode);
 
 			startGroupServer();
 			System.out.println("Group Server started");
@@ -139,13 +139,20 @@ public class RemoteGrepApplication {
 				}
 				// Add node to group membership list
 				else if ("j".equals(input.trim())) {
-					joinGroup();
+					if(!groupMembershipList.contains(new Node("",hostaddress,4445)))
+					{
+						joinGroup();
+					}
+					else
+					{
+						System.out.println("Node " + hostaddress +" is already part of the group.");
+					}
 				}
 				// Add Default nodes
 				else if ("d".equals(input.trim())) {
 					addDefaultNodes();
 				} else if ("g".equals(input.trim())) {
-					System.out.println(groupMemebershipList);
+					System.out.println(groupMembershipList);
 				}
 				// Run grep
 				else if ("q".equals(input.trim())) {
@@ -182,7 +189,7 @@ public class RemoteGrepApplication {
 	}
 
 	private void promptUserForInput() {
-		if (groupMemebershipList.contains(new Node("", hostaddress, 4445))) {
+		if (groupMembershipList.contains(new Node("", hostaddress, 4445))) {
 			System.out.println("This node is part of the group list already.");
 		} else {
 			System.out.println("(j) Join group");

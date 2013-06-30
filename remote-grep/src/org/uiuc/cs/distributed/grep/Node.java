@@ -5,7 +5,7 @@ package org.uiuc.cs.distributed.grep;
  * 
  * @author evan
  */
-public class Node
+public class Node implements Comparable<Node>
 {
 	private String timestamp = "";
     private String ip;
@@ -33,6 +33,25 @@ public class Node
     	this.port = port;
     }
 
+    @Override
+    public int compareTo(Node otherNode)
+    {
+    	return Long.valueOf(this.getTimestamp()).compareTo(Long.valueOf(otherNode.getTimestamp()));
+    }
+
+    @Override
+    public boolean equals(Object object)
+    {
+        boolean sameSame = false;
+
+        if (object != null && object instanceof Node)
+        {
+            sameSame = this.ip.equals(((Node) object).ip);
+        }
+
+        return sameSame;
+    }
+    
     public String getIP()
     {
         return this.ip;
@@ -42,33 +61,20 @@ public class Node
     {
         return this.port;
     }
-    
+
     public String getTimestamp()
     {
     	return this.timestamp;
     }
-
+    
     public boolean isValid()
     {
         return false;
     }
-
+    
     @Override
     public String toString()
     {
         return this.timestamp + ":" + this.ip + ":" + this.port;
-    }
-    
-    @Override
-    public boolean equals(Object object)
-    {
-        boolean sameSame = false;
-
-        if (object != null && object instanceof Node)
-        {
-            sameSame = this.ip == ((Node) object).ip;
-        }
-
-        return sameSame;
     }
 }
