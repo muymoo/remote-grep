@@ -94,7 +94,6 @@ public class FailureDetectorServer {
 							// process heartbeat queue updates
 							RemoteGrepApplication.LOGGER.info("FailureDetectorServer - consumer.run() - starting to process heartbeat queue updates");
 							int equalsComparisons = 0;
-							int compareToComparisons = 0;
 							for(Node updateNode : heartbeatsToProcess)
 							{
 								if(updateNode.equals(node))
@@ -103,7 +102,6 @@ public class FailureDetectorServer {
 									// the heartbeat timestamp is larger than the current one
 									if(updateNode.compareTo(node) > 0)
 									{
-										compareToComparisons++;
 										node.setTimestamp(updateNode.getTimestamp());
 									}
 								}
@@ -112,7 +110,6 @@ public class FailureDetectorServer {
 							{
 								RemoteGrepApplication.LOGGER.warning("FailureDetectorServer - consumer.run() - some of the heartbeats in the queue didn't match the membership list");
 							}
-							
 							
 							long nodeLastUpdate = Long.parseLong(node.getTimestamp());
 							
@@ -123,9 +120,20 @@ public class FailureDetectorServer {
 
 								System.out.println(new Date().getTime()+" failure detected at node: "+node.toString());
 								// remove from list
-								//RemoteGrepApplication.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
-								//System.out.println("Removing node: "+node.toString());
-								//RemoteGrepApplication.groupMembershipList.remove(node);
+								RemoteGrepApplication.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
+								System.out.println("Removing node: "+node.toString());
+
+								// Remove node from list (must use iterator since that's how we're looping)
+								i.remove();
+								
+								try {
+									// Notify others that node has been removed.
+									broadcast(node, "R");
+								} catch (UnknownHostException e) {
+									e.printStackTrace();
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
 							}
 						}
 				    }
@@ -133,7 +141,28 @@ public class FailureDetectorServer {
 			}
 		}
 		
-		
+		/**
+		 * Sends a multicast message to all nodes telling them to perform an action on this node in their list.
+		 * 
+		 * @param node Notify others about some change that happened to this node
+		 * @param action Could be an Add "A" or Remove "R" event
+		 * @throws UnknownHostException
+		 * @throws IOException
+		 */
+		private void broadcast(Node node, String action) throws UnknownHostException,
+				IOException {
+			// Notify all nodes of group list change
+			byte[] nodeChangedBuffer = new byte[256];
+			
+			String nodeChangedMessage = action + ":" + node;
+			nodeChangedBuffer = nodeChangedMessage.getBytes();
+
+			System.out.println("Notifying group about membership change: " + nodeChangedMessage);
+			InetAddress group = InetAddress.getByName(RemoteGrepApplication.UDP_MC_GROUP);
+			DatagramPacket groupListPacket = new DatagramPacket(
+					nodeChangedBuffer, nodeChangedBuffer.length, group, RemoteGrepApplication.UDP_MC_PORT);
+			socket.send(groupListPacket);
+		}
 
 		
 	}
