@@ -52,14 +52,38 @@ public class GroupServer extends Thread {
 				
 				// Add node to group list				
 				System.out.println("Timestamp added: " + timestamp);
-				RemoteGrepApplication.groupMemebershipList.add(timestamp + ":" +packet.getAddress().toString() + ":" + packet.getPort());
+				Node newNode = new Node(timestamp, packet.getAddress().toString(), packet.getPort());
+				RemoteGrepApplication.groupMemebershipList.add(newNode);
 				System.out.println("Group list: " + RemoteGrepApplication.groupMemebershipList.toString());
+				
+				
+				InetAddress address = packet.getAddress();
+				String addNodeMessage = "";
+				System.out.println("Sending current group list to new node: " + address.toString());
+				
+				// The new node doesn't have any members! Send current group list to new member. 
+				for(Node node : RemoteGrepApplication.groupMemebershipList)
+				{
+					addNodeMessage = "A:"+node.toString();
+					buf = addNodeMessage.getBytes();
+					DatagramPacket addNodePacket = new DatagramPacket(buf, buf.length, address,
+							4445);
+					System.out.println("Sending: " + addNodeMessage);
+					socket.send(addNodePacket);
+				}
+				System.out.println("Sending END packet");
+				String endMessage = "END";
+				buf = endMessage.getBytes();
+				DatagramPacket endPacket = new DatagramPacket(buf, buf.length, address,
+						4445);
+				socket.send(endPacket);
 				
 				// Notify all nodes of group list change
 				byte[] groupListBuffer = new byte[256];
 				System.out.println("Better tell my friends about who's here. I'll send a group text.");
-				String groupList = "HIIIII";//RemoteGrepApplication.groupMemebershipList.toString();
-				groupListBuffer = groupList.getBytes();
+				
+				String addNewestNodeMessage = "A:" + newNode;
+				groupListBuffer = addNewestNodeMessage.getBytes();
 
 				System.out.println("Notifying group about membership change.");
 				InetAddress group = InetAddress.getByName("228.5.6.7");

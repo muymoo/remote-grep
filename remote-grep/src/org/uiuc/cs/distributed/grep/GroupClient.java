@@ -7,6 +7,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -37,7 +38,7 @@ public class GroupClient extends Thread {
 		LOGGER.addHandler(logFileHandler);
 	}
 
-	// Asks to join LINUX_7 group and joins multicast group
+	// Asks to join LINUX_5 group and join multicast group
 	public void run() {
 		boolean result = sendJoinRequest();
 		if (result) {
@@ -45,7 +46,7 @@ public class GroupClient extends Thread {
 				MulticastSocket socket = new MulticastSocket(4446);
 				InetAddress group = InetAddress.getByName("228.5.6.7");
 				socket.joinGroup(group);
-				System.out.println("Joining UDP Group");
+				System.out.println("Joining UDP Group 228.5.6.7");
 				
 				byte[] buf = new byte[256];
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
@@ -56,7 +57,8 @@ public class GroupClient extends Thread {
 				
 				// Update local groupmembership list
 				System.out.println("It's a new membership list! I better update mine.");
-				RemoteGrepApplication.groupMemebershipList.add(timestamp + ":" +packet.getAddress().toString() + ":" + packet.getPort());
+				Node newNode = new Node(timestamp, packet.getAddress().toString(), packet.getPort());
+				RemoteGrepApplication.groupMemebershipList.add(newNode);
 				System.out.println(RemoteGrepApplication.groupMemebershipList);
 				
 				// Cleanup
@@ -109,7 +111,48 @@ public class GroupClient extends Thread {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		// Receive current groupmembership list from Linux5
+		boolean receivingGroupList = true;
+		byte[] receiveBuffer = new byte[256];
+		while(receivingGroupList)
+		{
+			
+			DatagramPacket addGroupMemberPacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+			
+			try {
+				socket.receive(addGroupMemberPacket);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			String addGroupMemberMessage = new String (addGroupMemberPacket.getData(), 0, addGroupMemberPacket.getLength());
+
+			if(addGroupMemberMessage.equalsIgnoreCase("END"))
+			{
+				System.out.println("Recieved updated group list: " + RemoteGrepApplication.groupMemebershipList);
+				receivingGroupList = false;
+				break;
+			}
+			
+			Node nodeToAdd = parseNodeFromMessage(addGroupMemberMessage);
+			RemoteGrepApplication.groupMemebershipList.add(nodeToAdd);
+		}
+		
 		socket.close();
-		return true; // TODO Wait until success message from linux7 or time out
+		return true; 
+	}
+
+	/**
+	 * Takes message and creates a {@link Node} out of it.
+	 * 
+	 * @param addGroupMemberMessage ACTION:TIMESTAMP:IP:PORT
+	 * @return Node from message
+	 */
+	private Node parseNodeFromMessage(String addGroupMemberMessage) {
+		System.out.println("Parsing message: " + addGroupMemberMessage);
+		String[] parts = addGroupMemberMessage.split(":");
+		System.out.println("Message parts: " + parts[1] + " " + parts[2] + " " + parts[3]);
+		return new Node(parts[1], parts[2], Integer.valueOf(parts[3]));
 	}
 }

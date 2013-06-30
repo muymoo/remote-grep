@@ -7,6 +7,7 @@ package org.uiuc.cs.distributed.grep;
  */
 public class Node
 {
+	private String timestamp = "";
     private String ip;
     private int    port;
 
@@ -22,8 +23,14 @@ public class Node
 
     public Node(String _ip, int _port) throws IllegalArgumentException
     {
-        this.ip = _ip;
-        this.port = _port;
+		this("", _ip, _port);
+    }
+    
+    public Node(String timestamp, String ip, int port)
+    {
+    	this.timestamp = timestamp;
+    	this.ip = ip;
+    	this.port = port;
     }
 
     public String getIP()
@@ -35,6 +42,11 @@ public class Node
     {
         return this.port;
     }
+    
+    public String getTimestamp()
+    {
+    	return this.timestamp;
+    }
 
     public boolean isValid()
     {
@@ -44,6 +56,6 @@ public class Node
     @Override
     public String toString()
     {
-        return this.ip + ":" + this.port;
+        return this.timestamp + ":" + this.ip + ":" + this.port;
     }
 }

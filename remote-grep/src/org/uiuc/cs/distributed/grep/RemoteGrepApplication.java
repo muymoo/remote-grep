@@ -4,8 +4,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -44,7 +42,7 @@ public class RemoteGrepApplication
             LINUX_5 + ":" + TCP_PORT, "130.126.112.146:4444", "130.126.112.117:4444"
                                                      };
 	private static GroupClient groupClient;
-    public static List<String> groupMemebershipList;
+    public static List<Node> groupMemebershipList = Collections.synchronizedList(new ArrayList<Node>());
 
     private String hostaddress = "";
     
@@ -101,9 +99,6 @@ public class RemoteGrepApplication
 
         app.startGrepServer();  // listen for incoming grep requests.
 		
-        RemoteGrepApplication.groupMemebershipList = Collections.synchronizedList(new ArrayList<String>());
-		RemoteGrepApplication.groupMemebershipList.add(LINUX_5); // Make linux5 the contact node.
-		
         try
         {
             app.hostaddress = InetAddress.getLocalHost().getHostAddress();
@@ -116,10 +111,15 @@ public class RemoteGrepApplication
         {
             LOGGER.warning("RemoteGrepApplication - main- failed to identify host");
         }
-        
+		
 		// If this is the introducer node, start listening for incoming requests now.
 		if(app.hostaddress.equals(LINUX_5))
 		{	
+			// Add Linux5 as the first memeber 
+	        String timestamp =  String.valueOf(System.currentTimeMillis());
+	        Node newNode = new Node(timestamp, app.hostaddress, Integer.valueOf(UDP_PORT));
+			RemoteGrepApplication.groupMemebershipList.add(newNode);
+			
 			app.startGroupServer();
 			System.out.println("Group Server started");
 		}
@@ -152,6 +152,10 @@ public class RemoteGrepApplication
                 else if ( "d".equals(input.trim()) )
                 {
                     addDefaultNodes();
+                }
+                else if ("g".equals(input.trim()))
+                {
+                	System.out.println(RemoteGrepApplication.groupMemebershipList);
                 }
                 // Run grep
                 else if ( "q".equals(input.trim()) )
@@ -205,6 +209,7 @@ public class RemoteGrepApplication
 		{
 			System.out.println("(j) Join group");
 		}
+		System.out.println("(g) Current memebership list");
 		System.out.println("(a) Add node ((d) adds default nodes)");
 		System.out.println("(q) Query logs");
 		System.out.println("(e) Exit");
@@ -231,17 +236,6 @@ public class RemoteGrepApplication
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-    }
-    
-    public static void addToGroup()
-    {
-    	RemoteGrepApplication.groupMemebershipList.add(app.hostaddress);
-    	LOGGER.info("Added node " + app.hostaddress +" to group.");
-    	
-    	for(String member : RemoteGrepApplication.groupMemebershipList)
-    	{
-    		//notifyGroupChange(app.groupMemebershipList);
-    	}
     }
     
     /**
