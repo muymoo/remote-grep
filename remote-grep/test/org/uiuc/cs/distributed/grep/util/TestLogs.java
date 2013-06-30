@@ -68,7 +68,7 @@ public class TestLogs
             FileWriter fileWriter = null;
             BufferedWriter bufferedWriter = null;
 
-            File dummyLogFile = new File(RemoteGrepApplication.logLocation + File.separator + "machine."
+            File dummyLogFile = new File("machine."
                     + machineNumber + ".log");
 
             fileWriter = new FileWriter(dummyLogFile.getAbsoluteFile());

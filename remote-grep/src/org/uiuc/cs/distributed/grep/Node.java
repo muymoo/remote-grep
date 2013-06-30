@@ -1,5 +1,7 @@
 package org.uiuc.cs.distributed.grep;
 
+import java.net.UnknownHostException;
+
 /**
  * This is a class representation of a grep node. This class could be used to represent a server for which to grep.
  * 
@@ -42,14 +44,14 @@ public class Node implements Comparable<Node>
     @Override
     public boolean equals(Object object)
     {
-        boolean sameSame = false;
+        boolean result = false;
 
         if (object != null && object instanceof Node)
         {
-            sameSame = this.ip.equals(((Node) object).ip);
+            result = this.ip.equals(((Node) object).ip);
         }
 
-        return sameSame;
+        return result;
     }
     
     public String getIP()
@@ -70,6 +72,16 @@ public class Node implements Comparable<Node>
     public boolean isValid()
     {
         return false;
+    }
+    
+    public boolean isSelf(String selfIpAddress)
+    {
+    	if(this.ip.equals(selfIpAddress))
+    	{
+    		return true;
+    	} else {
+    		return false;
+    	}
     }
     
     @Override

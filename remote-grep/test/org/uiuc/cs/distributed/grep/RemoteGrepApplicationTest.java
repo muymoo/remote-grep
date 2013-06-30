@@ -43,7 +43,7 @@ public class RemoteGrepApplicationTest
     @BeforeClass
     public static void initialize()
     {
-        remoteGrepApplication = RemoteGrepApplication.getInstance(RemoteGrepApplication.logLocation);
+        remoteGrepApplication = RemoteGrepApplication.getInstance("/tmp/cs425_momontbowling/");
         remoteGrepApplication.startGrepServer();
 
         System.setOut(new PrintStream(outContent));

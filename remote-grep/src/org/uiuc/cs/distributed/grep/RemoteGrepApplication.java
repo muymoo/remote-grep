@@ -24,24 +24,30 @@ import java.util.logging.SimpleFormatter;
  * @author evan
  */
 public class RemoteGrepApplication {
-	public static String logLocation = "/tmp/cs425_momontbowling2";
-	private static final String LINUX_5 = "130.126.112.148";
+	public static String logLocation = "";
 	public static final int TCP_PORT = 4444;
 	public static final int UDP_PORT = 4445;
+	public static final int UDP_MC_PORT = 4446;
+	public static final int UDP_FD_PORT = 4447;      // port for failure detection
+	public static final String UDP_MC_GROUP = "228.5.6.7";
+	public static final int timeBoundedFailureInMilli = 5000;
 	public static Logger LOGGER;
 
 	private static Handler logFileHandler;
 	private static RemoteGrepApplication instance = null;
 	private GrepServer grepServer;
 	private GroupServer groupServer;
+	private static GroupClient groupClient;
+	private FailureDetectorServer failureDetectorServer;
+	private FailureDetectorClient failureDetectorClient;
 	public ArrayList<GrepTask> grepTasks;
 	public GrepTask taskToStopServer;
+	private static final String LINUX_5 = "130.126.112.148";
 	private static String[] servers = new String[] { LINUX_5 + ":" + TCP_PORT,
 			"130.126.112.146:4444", "130.126.112.117:4444" };
-	private static GroupClient groupClient;
+
 	public static List<Node> groupMembershipList = Collections
 			.synchronizedList(new ArrayList<Node>());
-
 	private String hostaddress = "";
 
 	private RemoteGrepApplication(String newLogLocation) {
@@ -73,6 +79,8 @@ public class RemoteGrepApplication {
 		this.grepTasks = new ArrayList<GrepTask>();
 		this.grepServer = new GrepServer();
 		this.groupServer = new GroupServer();
+		this.failureDetectorServer = new FailureDetectorServer();
+		this.failureDetectorClient = new FailureDetectorClient();
 	}
 
 	/**
@@ -100,8 +108,6 @@ public class RemoteGrepApplication {
 			hostaddress = InetAddress.getLocalHost().getHostAddress();
 
 			System.out.println("RemoteGrepApplication - Server started on: "
-					+ hostaddress + ":" + grepServer.getPort());
-			LOGGER.info("RemoteGrepApplication - run() - Server started on: "
 					+ hostaddress + ":" + grepServer.getPort());
 		} catch (UnknownHostException e1) {
 			LOGGER.warning("RemoteGrepApplication - run() - failed to identify host");
@@ -170,6 +176,8 @@ public class RemoteGrepApplication {
 				else if ("e".equals(input.trim())) {
 					stopGrepServer();
 					stopGroupServer();
+					// TODO: stopGroupClient if we aren't the leader?
+					failureDetectorServer.stop();
 					break;
 				}
 			} catch (IOException e) {
@@ -189,7 +197,7 @@ public class RemoteGrepApplication {
 	}
 
 	private void promptUserForInput() {
-		if (groupMembershipList.contains(new Node("", hostaddress, 4445))) {
+		if (groupMembershipList.contains(new Node("", hostaddress, 1111))) {
 			System.out.println("This node is part of the group list already.");
 		} else {
 			System.out.println("(j) Join group");
