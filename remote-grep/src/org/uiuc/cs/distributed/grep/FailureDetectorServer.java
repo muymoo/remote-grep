@@ -19,6 +19,7 @@ public class FailureDetectorServer {
 	private Thread producer;
 	private Thread consumer;
 	private String hostaddress = "";
+	protected DatagramSocket socket = null;
 	
 	public FailureDetectorServer()
 	{
@@ -41,6 +42,7 @@ public class FailureDetectorServer {
 		consumer.stop();
 		// TODO: alternative is to send a poison datagram to producer,
 		//       which adds poison item to queue.
+		socket.close();
 	}
 
 	
@@ -85,15 +87,16 @@ public class FailureDetectorServer {
 						{
 							long nodeLastUpdate = Long.parseLong(node.getTimestamp());
 							
-							if((nodeLastUpdate+RemoteGrepApplication.timeBoundedFailureInMilli) >
+							if((nodeLastUpdate+RemoteGrepApplication.timeBoundedFailureInMilli) <
 									currTime)
 							{
 								RemoteGrepApplication.LOGGER.info(new Date().getTime()+" RQ1: FailureDetectorServer - run() - failure detected at node: "+ node.toString());
-								RemoteGrepApplication.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
+
 								System.out.println(new Date().getTime()+" failure detected at node: "+node.toString());
 								// remove from list
-								System.out.println("Removing node: "+node.toString());
-								RemoteGrepApplication.groupMembershipList.remove(node);
+								//RemoteGrepApplication.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
+								//System.out.println("Removing node: "+node.toString());
+								//RemoteGrepApplication.groupMembershipList.remove(node);
 							}
 						}
 				    }
@@ -108,7 +111,6 @@ public class FailureDetectorServer {
 	
 	public class HeartbeatProducer implements Runnable
 	{
-		protected DatagramSocket socket = null;
 
 		@Override
 		public void run() {
@@ -136,10 +138,13 @@ public class FailureDetectorServer {
 				
 		    	try {
 					String data = new String(packet.getData(),0, packet.getLength(), "UTF-8");
+					RemoteGrepApplication.LOGGER.info("FailureDetectionServer - producer.run() - received packet data: "+data);
+					
+					/*
 					if(data.equals("HEARTBEAT"))
 					{
 						
-					}
+					}*/
 				} catch (UnsupportedEncodingException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

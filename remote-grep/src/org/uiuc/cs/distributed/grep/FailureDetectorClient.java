@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 public class FailureDetectorClient{
@@ -27,6 +28,7 @@ public class FailureDetectorClient{
 	public void stop()
 	{
 		client.stop();
+		socket.close();
 		// TODO; 
 	}
 	
@@ -57,29 +59,33 @@ public class FailureDetectorClient{
 				}
 				
 				synchronized(RemoteGrepApplication.groupMembershipList)
-				{
+				{		
 					// send heartbeats to all other nodes
 					int nodesContacted = 0;
-					for(Node node : RemoteGrepApplication.groupMembershipList) {
+
+					Iterator<Node> i = RemoteGrepApplication.groupMembershipList.iterator(); // Must be in synchronized block
+				    while (i.hasNext())
+				    {
+				    	Node node = i.next();
 						if(!node.isSelf(hostaddress))
 						{
 							nodesContacted++;
 							RemoteGrepApplication.LOGGER.info(new Date().getTime() +" FailureDetectorClient - run() - Sending heartbeat.");
 							System.out.println("sending heartbeat");
 							
-							/*
+							
 							InetAddress target = null;
 							try {
-								target = InetAddress.getByName(ip);
+								target = InetAddress.getByName(node.getIP());
 							} catch (UnknownHostException e) {
 								e.printStackTrace();
 							}
 							
 							try {
-								sendData(target,"Heartbeat");
+								sendData(target,"HEARTBEAT");
 							} catch (IOException e) {
 								e.printStackTrace();
-							}*/
+							}
 						}
 					}
 					if(nodesContacted == 0) {

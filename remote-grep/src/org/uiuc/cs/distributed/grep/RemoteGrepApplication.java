@@ -8,6 +8,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
@@ -113,17 +114,20 @@ public class RemoteGrepApplication {
 			LOGGER.warning("RemoteGrepApplication - run() - failed to identify host");
 		}
 
-		// If this is the introducer node, start listening for incoming requests
-		// now.
-		if (hostaddress.equals(LINUX_5)) {
-			// Add Linux5 as the first member
-			String timestamp = String.valueOf(System.currentTimeMillis());
-			Node newNode = new Node(timestamp, hostaddress,
-					Integer.valueOf(UDP_PORT));
-			groupMembershipList.add(newNode);
-
-			startGroupServer();
-			System.out.println("Group Server started");
+		synchronized(groupMembershipList)
+		{
+			// If this is the introducer node, start listening for incoming requests
+			// now.
+			if (hostaddress.equals(LINUX_5)) {
+				// Add Linux5 as the first member
+				String timestamp = String.valueOf(System.currentTimeMillis());
+				Node newNode = new Node(timestamp, hostaddress,
+						Integer.valueOf(UDP_PORT));
+				groupMembershipList.add(newNode);
+	
+				startGroupServer();
+				System.out.println("Group Server started");
+			}
 		}
 
 		InputStreamReader inputStreamReader = new InputStreamReader(System.in);
@@ -197,10 +201,13 @@ public class RemoteGrepApplication {
 	}
 
 	private void promptUserForInput() {
-		if (groupMembershipList.contains(new Node("", hostaddress, 1111))) {
-			System.out.println("This node is part of the group list already.");
-		} else {
-			System.out.println("(j) Join group");
+		synchronized(groupMembershipList)
+		{
+			if (groupMembershipList.contains(new Node("", hostaddress, 1111))) {
+				System.out.println("This node is part of the group list already.");
+			} else {
+				System.out.println("(j) Join group");
+			}
 		}
 		System.out.println("(g) Current memebership list");
 		System.out.println("(a) Add node ((d) adds default nodes)");
