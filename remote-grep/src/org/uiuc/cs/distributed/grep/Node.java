@@ -58,4 +58,17 @@ public class Node
     {
         return this.timestamp + ":" + this.ip + ":" + this.port;
     }
+    
+    @Override
+    public boolean equals(Object object)
+    {
+        boolean sameSame = false;
+
+        if (object != null && object instanceof Node)
+        {
+            sameSame = this.ip == ((Node) object).ip;
+        }
+
+        return sameSame;
+    }
 }
