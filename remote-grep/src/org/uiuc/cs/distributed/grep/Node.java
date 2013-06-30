@@ -63,6 +63,11 @@ public class Node implements Comparable<Node>
     {
         return this.port;
     }
+    
+    public void setTimestamp(String _timestamp)
+    {
+    	this.timestamp = _timestamp;
+    }
 
     public String getTimestamp()
     {

@@ -8,6 +8,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -66,12 +67,17 @@ public class FailureDetectorServer {
 					end = new Date().getTime();
 				}
 				
-				// process items in heartbeat queue
+				// creating a local copy of the queue elements to avoid a deadlock situation
+				// with nested synchronized statements
+				List<Node> heartbeatsToProcess = new ArrayList<Node>();
 				synchronized(heartbeatQueue)
 				{
+					RemoteGrepApplication.LOGGER.info("FailureDetectorServer - consumer.run() - heartbeatQueue size: "+heartbeatQueue.size());
 					while(heartbeatQueue.size() > 0)
 					{
-						
+						Node temp = heartbeatQueue.remove();
+						heartbeatsToProcess.add(temp);
+						RemoteGrepApplication.LOGGER.info("FailureDetectorServer - consumer.run() - heartbeatQueue element: "+temp.toString());
 					}
 				}
 				
@@ -85,6 +91,29 @@ public class FailureDetectorServer {
 				    	Node node = i.next();
 						if(!node.isSelf(hostaddress))
 						{
+							// process heartbeat queue updates
+							RemoteGrepApplication.LOGGER.info("FailureDetectorServer - consumer.run() - starting to process heartbeat queue updates");
+							int equalsComparisons = 0;
+							int compareToComparisons = 0;
+							for(Node updateNode : heartbeatsToProcess)
+							{
+								if(updateNode.equals(node))
+								{
+									equalsComparisons++;
+									// the heartbeat timestamp is larger than the current one
+									if(updateNode.compareTo(node) > 0)
+									{
+										compareToComparisons++;
+										node.setTimestamp(updateNode.getTimestamp());
+									}
+								}
+							}
+							if(equalsComparisons != heartbeatsToProcess.size())
+							{
+								RemoteGrepApplication.LOGGER.warning("FailureDetectorServer - consumer.run() - some of the heartbeats in the queue didn't match the membership list");
+							}
+							
+							
 							long nodeLastUpdate = Long.parseLong(node.getTimestamp());
 							
 							if((nodeLastUpdate+RemoteGrepApplication.timeBoundedFailureInMilli) <
@@ -140,11 +169,16 @@ public class FailureDetectorServer {
 					String data = new String(packet.getData(),0, packet.getLength(), "UTF-8");
 					RemoteGrepApplication.LOGGER.info("FailureDetectionServer - producer.run() - received packet data: "+data);
 					
-					/*
+					
 					if(data.equals("HEARTBEAT"))
 					{
-						
-					}*/
+						synchronized(heartbeatQueue)
+						{
+							Node heartbeatNode = new Node(String.valueOf(new Date().getTime()),packet.getAddress().toString().replace("/",""),packet.getPort());
+							heartbeatQueue.add(heartbeatNode);
+							RemoteGrepApplication.LOGGER.info("FailureDetectorServer - producer.run() - added heartbeat node: "+heartbeatNode.toString());
+						}
+					}
 				} catch (UnsupportedEncodingException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
