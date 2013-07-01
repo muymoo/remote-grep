@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -175,12 +177,35 @@ public class RemoteGrepApplication {
 
 					System.out.println("Total Time: " + (end - start) + "ms");
 				}
+				else if ("l".equals(input.trim()))
+				{
+					System.out.println("Leaving group by choice.");
+					leaveGroup();
+				}
 				// Exit
 				else if ("e".equals(input.trim())) {
-					stopGrepServer();
+					
+					System.out.println("Stopping membership server.");
 					stopGroupServer();
-					// TODO: stopGroupClient if we aren't the leader?
+					System.out.println("Stopping membership client.");
+					
+					if(groupClient != null)
+					{
+						groupClient.interrupt();
+						groupClient.stopClient();
+						try {
+							groupClient.join();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+					
+					System.out.println("Stopping heartbeats.");
 					failureDetectorServer.stop();
+					failureDetectorClient.stop();
+					
+					stopGrepServer();
+					// TODO: stopGroupClient if we aren't the leader?
 					break;
 				}
 			} catch (IOException e) {
@@ -203,7 +228,7 @@ public class RemoteGrepApplication {
 		synchronized(groupMembershipList)
 		{
 			if (groupMembershipList.contains(new Node(System.currentTimeMillis(), hostaddress, 1111))) {
-				System.out.println("This node is part of the group list already.");
+				System.out.println("(l) Leave group");
 			} else {
 				System.out.println("(j) Join group");
 			}
@@ -227,11 +252,35 @@ public class RemoteGrepApplication {
 		// Send IP to Linux7
 		groupClient = new GroupClient(new Node(LINUX_5 + ":" + UDP_PORT));
 		groupClient.start();
+	}
+	
+	public void leaveGroup()
+	{
+		System.out.println("Stopping membership server.");
+		stopGroupServer();
+		System.out.println("Stopping membership client.");
+		groupClient.stopClient();
+		System.out.println("Stopping heartbeats.");
+		failureDetectorServer.stop();
+		failureDetectorClient.stop();
+		
 		try {
-			groupClient.join();
-		} catch (InterruptedException e) {
+			Node thisNode = new Node(111L,hostaddress,1111);
+			
+			System.out.println("Notify all nodes that I'm leaving.");
+			if(groupMembershipList.contains(thisNode))
+			{
+				// Tell all nodes to remove this node from their lists
+				broadcast(groupMembershipList.get(groupMembershipList.indexOf(thisNode)), "R");
+			}
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		groupMembershipList.clear();
+		System.out.println("Group membership list cleared on this node.");
 	}
 
 	/**
@@ -328,6 +377,30 @@ public class RemoteGrepApplication {
 		System.out.println("\n");
 	}
 
+	/**
+	 * Sends a multicast message to all nodes telling them to perform an action on this node in their list.
+	 * 
+	 * @param node Notify others about some change that happened to this node
+	 * @param action Could be an Add "A" or Remove "R" event
+	 * @throws UnknownHostException
+	 * @throws IOException
+	 */
+	public void broadcast(Node node, String action) throws UnknownHostException,
+			IOException {
+		// Notify all nodes of group list change
+		byte[] nodeChangedBuffer = new byte[256];
+		DatagramSocket socket = new DatagramSocket(RemoteGrepApplication.UDP_MC_PORT);
+		String nodeChangedMessage = action + ":" + node;
+		nodeChangedBuffer = nodeChangedMessage.getBytes();
+
+		System.out.println("Notifying group about membership change: " + nodeChangedMessage);
+		InetAddress group = InetAddress.getByName(RemoteGrepApplication.UDP_MC_GROUP);
+		DatagramPacket groupListPacket = new DatagramPacket(
+				nodeChangedBuffer, nodeChangedBuffer.length, group, RemoteGrepApplication.UDP_MC_PORT);
+		socket.send(groupListPacket);
+		socket.close();
+	}
+	
 	/*
 	 * entry function for running the application
 	 * 

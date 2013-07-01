@@ -115,11 +115,10 @@ public class GroupServer extends Thread {
 	 * @throws UnknownHostException
 	 * @throws IOException
 	 */
-	private void broadcast(Node node, String action) throws UnknownHostException,
+	public void broadcast(Node node, String action) throws UnknownHostException,
 			IOException {
 		// Notify all nodes of group list change
 		byte[] nodeChangedBuffer = new byte[256];
-		
 		String nodeChangedMessage = action + ":" + node;
 		nodeChangedBuffer = nodeChangedMessage.getBytes();
 

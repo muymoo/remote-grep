@@ -21,13 +21,19 @@ public class FailureDetectorClient{
 		} catch (UnknownHostException e1) {
 			e1.printStackTrace();
 		}
-		client = new Thread(new FailureDetectorClientRunnable());
+		client = new Thread(new FailureDetectorClientRunnable(),"FailureDetectorClient");
 		client.start();
 	}
 	
 	public void stop()
 	{
-		client.stop();
+		client.interrupt();
+		try {
+			client.join();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		socket.close();
 		// TODO; 
 	}
@@ -44,16 +50,17 @@ public class FailureDetectorClient{
 				e.printStackTrace();
 			}
 			
-			while(true) {
+			while(!Thread.currentThread().isInterrupted()) {
 				
 				// sleep
 				long start = new Date().getTime();
 				long end = start;
-				while((end - start) < 2500)
+				while((end - start) < 2500 && !Thread.currentThread().isInterrupted())
 				{
 					try {
 						Thread.sleep(2500);
 					} catch (InterruptedException e) {
+						return;
 					}
 					end = new Date().getTime();
 				}

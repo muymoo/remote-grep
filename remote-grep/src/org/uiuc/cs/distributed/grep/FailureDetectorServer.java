@@ -57,11 +57,21 @@ public class FailureDetectorServer {
 	 */
 	public void stop()
 	{
-		producer.stop();
-		consumer.stop();
+//		producer.stop();
+//		consumer.stop();
+		producer.interrupt();
+		consumer.interrupt();
+		socket.close();
+		try {
+			consumer.join();
+			producer.join();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		// TODO: alternative is to send a poison datagram to producer,
 		//       which adds poison item to queue.
-		socket.close();
+		
 	}
 
 	/*
@@ -71,11 +81,10 @@ public class FailureDetectorServer {
 	 */
 	public class HeartbeatConsumer implements Runnable
 	{
-
 		@Override
 		public void run() {
 			RemoteGrepApplication.LOGGER.info("FailureDetectorServer - consumer.run() - starting consumer");
-			while(true)
+			while(!Thread.currentThread().isInterrupted())
 			{
 				// sleep 2.5 seconds
 				long start = new Date().getTime();
@@ -85,6 +94,7 @@ public class FailureDetectorServer {
 					try {
 						Thread.sleep(2500);
 					} catch (InterruptedException e) {
+						return;
 					}
 					end = new Date().getTime();
 				}
@@ -206,7 +216,7 @@ public class FailureDetectorServer {
 		public void run() {
 			RemoteGrepApplication.LOGGER.info("FailureDetectorServer - producer.run() - starting producer");
 			
-			while(true)
+			while(!Thread.currentThread().isInterrupted())
 			{
 				
 				byte[] buf = new byte[256];
@@ -214,8 +224,7 @@ public class FailureDetectorServer {
 				try {
 					socket.receive(packet);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					System.out.println("Receiving heartbeats interrupted.");
 				}
 				
 		    	try {
