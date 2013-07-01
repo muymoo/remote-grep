@@ -15,14 +15,40 @@ public class FailureDetectorClient{
 	public DatagramSocket socket = null;
 	private String hostaddress = "";
 	private Thread client;
+	public static double messageFailureRate;
+	
 	public FailureDetectorClient() {
 		try {
 			hostaddress = InetAddress.getLocalHost().getHostAddress();
 		} catch (UnknownHostException e1) {
 			e1.printStackTrace();
 		}
+		// get a datagram socket
+		try {
+			socket = new DatagramSocket();
+		} catch (SocketException e) {
+			e.printStackTrace();
+		}
+
 		client = new Thread(new FailureDetectorClientRunnable(),"FailureDetectorClient");
 		client.start();
+	}
+	
+	public static boolean isRandomFailure()
+	{
+		if(messageFailureRate == 0.0)
+		{
+			return false;
+		} else {
+			double rand = Math.random();
+			System.out.println("rand: "+rand);
+			if(Math.random() < messageFailureRate)
+			{
+				return true;
+			} else {
+				return false;
+			}
+		}
 	}
 	
 	public void stop()
@@ -40,16 +66,13 @@ public class FailureDetectorClient{
 	
 	public class FailureDetectorClientRunnable implements Runnable 
 	{
+
+		public FailureDetectorClientRunnable()
+		{
+		}
 	
 		public void run()
 		{
-			// get a datagram socket
-			try {
-				socket = new DatagramSocket();
-			} catch (SocketException e) {
-				e.printStackTrace();
-			}
-			
 			while(!Thread.currentThread().isInterrupted()) {
 				
 				// sleep
@@ -76,10 +99,7 @@ public class FailureDetectorClient{
 				    	Node node = i.next();
 						if(!node.isSelf(hostaddress))
 						{
-							nodesContacted++;
-							RemoteGrepApplication.LOGGER.info(new Date().getTime() +" FailureDetectorClient - run() - Sending heartbeat.");
-							System.out.println("sending heartbeat");
-							
+							nodesContacted++;				
 							
 							InetAddress target = null;
 							try {
@@ -104,12 +124,19 @@ public class FailureDetectorClient{
 		}
 		
 	    private void sendData(InetAddress target, String data) throws IOException{
-	    	if(data.getBytes("utf-8").length > 256) {
-	    		RemoteGrepApplication.LOGGER.info("FailureDetectorClient - sendData - string data is too long");
-	    		throw new IOException("string data is too long");
-	    	}
-	        DatagramPacket datagram = new DatagramPacket(data.getBytes("utf-8"), data.length(), target, RemoteGrepApplication.UDP_FD_PORT);
-	        socket.send(datagram);
+    		if(!isRandomFailure())
+    		{
+	    		// generate random number to determine whether or  not to drop the packet
+		    	if(data.getBytes("utf-8").length > 256) {
+		    		RemoteGrepApplication.LOGGER.info("FailureDetectorClient - sendData - string data is too long");
+		    		throw new IOException("string data is too long");
+		    	}
+		        DatagramPacket datagram = new DatagramPacket(data.getBytes("utf-8"), data.length(), target, RemoteGrepApplication.UDP_FD_PORT);
+		        socket.send(datagram);
+				RemoteGrepApplication.LOGGER.info(new Date().getTime() +" FailureDetectorClient - run() - Sending heartbeat.");
+    		} else {
+				RemoteGrepApplication.LOGGER.info(new Date().getTime() +" FailureDetectorClient - run() - heartbeat message dropped!");
+    		}
 	    }
 	}
 }

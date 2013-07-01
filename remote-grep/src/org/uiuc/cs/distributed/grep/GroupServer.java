@@ -122,11 +122,14 @@ public class GroupServer extends Thread {
 		String nodeChangedMessage = action + ":" + node;
 		nodeChangedBuffer = nodeChangedMessage.getBytes();
 
-		System.out.println("Notifying group about membership change: " + nodeChangedMessage);
-		InetAddress group = InetAddress.getByName(RemoteGrepApplication.UDP_MC_GROUP);
-		DatagramPacket groupListPacket = new DatagramPacket(
-				nodeChangedBuffer, nodeChangedBuffer.length, group, RemoteGrepApplication.UDP_MC_PORT);
-		socket.send(groupListPacket);
+		if(!FailureDetectorClient.isRandomFailure())
+		{
+			System.out.println("Notifying group about membership change: " + nodeChangedMessage);
+			InetAddress group = InetAddress.getByName(RemoteGrepApplication.UDP_MC_GROUP);
+			DatagramPacket groupListPacket = new DatagramPacket(
+					nodeChangedBuffer, nodeChangedBuffer.length, group, RemoteGrepApplication.UDP_MC_PORT);
+			socket.send(groupListPacket);
+		}
 	}
 
 	private void sendGroupList(Node newNode) throws IOException {
@@ -140,22 +143,27 @@ public class GroupServer extends Thread {
 		{
 			for(Node node : RemoteGrepApplication.groupMembershipList)
 			{
-				addNodeMessage = "A:"+node.toString();
-				buf = addNodeMessage.getBytes();
-				DatagramPacket addNodePacket = new DatagramPacket(buf, buf.length, address,
-						RemoteGrepApplication.UDP_PORT);
-				System.out.println("Sending: " + addNodeMessage);
-				socket.send(addNodePacket);
+				if(!FailureDetectorClient.isRandomFailure())
+				{
+					addNodeMessage = "A:"+node.toString();
+					buf = addNodeMessage.getBytes();
+					DatagramPacket addNodePacket = new DatagramPacket(buf, buf.length, address,
+							RemoteGrepApplication.UDP_PORT);
+					System.out.println("Sending: " + addNodeMessage);
+					socket.send(addNodePacket);
+				}
 			}
 		}
 
-		
-		System.out.println("Sending END packet");
-		String endMessage = "END";
-		buf = endMessage.getBytes();
-		DatagramPacket endPacket = new DatagramPacket(buf, buf.length, address,
-				RemoteGrepApplication.UDP_PORT);
-		socket.send(endPacket);
+		if(!FailureDetectorClient.isRandomFailure())
+		{
+			System.out.println("Sending END packet");
+			String endMessage = "END";
+			buf = endMessage.getBytes();
+			DatagramPacket endPacket = new DatagramPacket(buf, buf.length, address,
+					RemoteGrepApplication.UDP_PORT);
+			socket.send(endPacket);
+		}
 	}
 
 	private void addNewNode(Node newNode) {

@@ -79,10 +79,6 @@ public class RemoteGrepApplication {
 
 		LOGGER.addHandler(logFileHandler);
 		this.grepTasks = new ArrayList<GrepTask>();
-		this.grepServer = new GrepServer();
-		this.groupServer = new GroupServer();
-		this.failureDetectorServer = new FailureDetectorServer();
-		this.failureDetectorClient = new FailureDetectorClient();
 	}
 
 	/**
@@ -95,6 +91,26 @@ public class RemoteGrepApplication {
 			instance = new RemoteGrepApplication(newLogLocation);
 		}
 		return instance;
+	}
+	
+	/**
+	 * Configures/starts the failure detection threads and sets the intentional message
+	 * failure rate
+	 * 
+	 * @param messageFailureRate - a percentage represented as a double in the range [0,1]
+	 */
+	public void configureFailureDetection(double messageFailureRate)
+	{
+		if(messageFailureRate <= 0.0 || messageFailureRate > 1.0)
+		{
+			FailureDetectorClient.messageFailureRate = 0.0;
+		} else {
+			FailureDetectorClient.messageFailureRate = messageFailureRate;
+		}
+		this.failureDetectorServer = new FailureDetectorServer();
+		this.failureDetectorClient = new FailureDetectorClient();
+		this.grepServer = new GrepServer();
+		this.groupServer = new GroupServer();
 	}
 
 	/**
@@ -409,10 +425,13 @@ public class RemoteGrepApplication {
 		if (args.length == 1) {
 			// TODO: check to see if the location exists
 			RemoteGrepApplication app = new RemoteGrepApplication(args[0]);
-
+			app.configureFailureDetection(0);
+			app.run();
+		} else if( args.length == 2){
+			RemoteGrepApplication app = new RemoteGrepApplication(args[0]);
+			app.configureFailureDetection(Double.parseDouble(args[1]));
 			app.run();
 		} else {
-
 			printUsage();
 			System.exit(-1);
 		}

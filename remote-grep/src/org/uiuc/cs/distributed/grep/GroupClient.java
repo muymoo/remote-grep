@@ -228,22 +228,25 @@ public class GroupClient extends Thread {
 	 * function for sending
 	 */
 	private void sendData(InetAddress target, String data) throws IOException {
-		DatagramSocket socket = new DatagramSocket(RemoteGrepApplication.UDP_PORT);
-		System.out.println("sendData: " + data);
-		if (data.getBytes("UTF-8").length > 256) {
-			RemoteGrepApplication.LOGGER
-					.warning("GroupClient - sendData() - data string: " + data
-							+ " is too long.");
+		if(!FailureDetectorClient.isRandomFailure())
+		{
+			DatagramSocket socket = new DatagramSocket(RemoteGrepApplication.UDP_PORT);
+			System.out.println("sendData: " + data);
+			if (data.getBytes("UTF-8").length > 256) {
+				RemoteGrepApplication.LOGGER
+						.warning("GroupClient - sendData() - data string: " + data
+								+ " is too long.");
+				socket.close();
+				throw new IOException();
+			}
+			byte[] buf = new byte[256];
+			buf = data.getBytes("UTF-8");
+			
+			DatagramPacket datagram = new DatagramPacket(data.getBytes("utf-8"),
+					buf.length, target, RemoteGrepApplication.UDP_PORT);
+			System.out.println("Sending: " + datagram.toString());
+			socket.send(datagram);
 			socket.close();
-			throw new IOException();
 		}
-		byte[] buf = new byte[256];
-		buf = data.getBytes("UTF-8");
-		
-		DatagramPacket datagram = new DatagramPacket(data.getBytes("utf-8"),
-				buf.length, target, RemoteGrepApplication.UDP_PORT);
-		System.out.println("Sending: " + datagram.toString());
-		socket.send(datagram);
-		socket.close();
 	}
 }
