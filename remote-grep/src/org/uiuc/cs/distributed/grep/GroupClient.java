@@ -173,7 +173,7 @@ public class GroupClient extends Thread {
 		String[] parts = addGroupMemberMessage.split(":");
 		System.out.println("Message parts: " + parts[1] + " " + parts[2] + " "
 				+ parts[3]);
-		return new Node(parts[1], parts[2], Integer.valueOf(parts[3].trim()));
+		return new Node(Long.parseLong(parts[1]), parts[2], Integer.valueOf(parts[3].trim()));
 	}
 	
 	private String parseActionFromMessage(String addGroupMemberMessage) {

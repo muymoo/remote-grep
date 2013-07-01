@@ -120,8 +120,7 @@ public class RemoteGrepApplication {
 			// now.
 			if (hostaddress.equals(LINUX_5)) {
 				// Add Linux5 as the first member
-				String timestamp = String.valueOf(System.currentTimeMillis());
-				Node newNode = new Node(timestamp, hostaddress,
+				Node newNode = new Node(System.currentTimeMillis(), hostaddress,
 						Integer.valueOf(UDP_PORT));
 				groupMembershipList.add(newNode);
 	
@@ -149,7 +148,7 @@ public class RemoteGrepApplication {
 				}
 				// Add node to group membership list
 				else if ("j".equals(input.trim())) {
-					if(!groupMembershipList.contains(new Node("",hostaddress,4445)))
+					if(!groupMembershipList.contains(new Node(System.currentTimeMillis(),hostaddress,4445)))
 					{
 						joinGroup();
 					}
@@ -203,7 +202,7 @@ public class RemoteGrepApplication {
 	private void promptUserForInput() {
 		synchronized(groupMembershipList)
 		{
-			if (groupMembershipList.contains(new Node("", hostaddress, 1111))) {
+			if (groupMembershipList.contains(new Node(System.currentTimeMillis(), hostaddress, 1111))) {
 				System.out.println("This node is part of the group list already.");
 			} else {
 				System.out.println("(j) Join group");

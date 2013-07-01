@@ -47,7 +47,7 @@ public class GroupServer extends Thread {
 				
 				// Add node to group list				
 				System.out.println("Timestamp added: " + timestamp);
-				Node newNode = new Node(timestamp, packet.getAddress().getHostAddress(), packet.getPort());
+				Node newNode = new Node(Long.parseLong(timestamp), packet.getAddress().getHostAddress(), packet.getPort());
 				
 				synchronized(RemoteGrepApplication.groupMembershipList)
 				{

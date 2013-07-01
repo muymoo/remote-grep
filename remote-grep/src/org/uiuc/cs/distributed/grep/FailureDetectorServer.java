@@ -15,6 +15,12 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+/*
+ * This class performs the failure detector server work
+ * the server receives on a UDP port waiting for heartbeat messages from other nodes.
+ * This server uses the consumer/producer pattern to process heartbeat messages.
+ * The constructor starts both consumer and producer threads.
+ */
 public class FailureDetectorServer {
 	protected static BlockingQueue<Node> heartbeatQueue;
 	private Thread producer;
@@ -30,6 +36,15 @@ public class FailureDetectorServer {
 			e1.printStackTrace();
 		}
 		
+		try {
+			socket = new DatagramSocket(RemoteGrepApplication.UDP_FD_PORT);
+		} catch (SocketException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			RemoteGrepApplication.LOGGER.info("FailureDetectorServer - producer.run() - couldn't start server on port: "+
+					RemoteGrepApplication.UDP_FD_PORT);
+		}
+		
 		heartbeatQueue = new ArrayBlockingQueue<Node>(6);
 		producer = new Thread(new HeartbeatProducer());
 		consumer = new Thread(new HeartbeatConsumer());
@@ -37,6 +52,9 @@ public class FailureDetectorServer {
 		consumer.start();
 	}
 	
+	/*
+	 * stops both the consumer/producer threads so that the application can exit
+	 */
 	public void stop()
 	{
 		producer.stop();
@@ -46,7 +64,11 @@ public class FailureDetectorServer {
 		socket.close();
 	}
 
-	
+	/*
+	 * this runnable class acts as the consumer of heartbeast messages. It updates the timestamps
+	 * in the nodes this node is monitoring, and will determine failures based on whether or not 
+	 * updates have been received.
+	 */
 	public class HeartbeatConsumer implements Runnable
 	{
 
@@ -72,12 +94,10 @@ public class FailureDetectorServer {
 				List<Node> heartbeatsToProcess = new ArrayList<Node>();
 				synchronized(heartbeatQueue)
 				{
-					RemoteGrepApplication.LOGGER.info("FailureDetectorServer - consumer.run() - heartbeatQueue size: "+heartbeatQueue.size());
 					while(heartbeatQueue.size() > 0)
 					{
 						Node temp = heartbeatQueue.remove();
 						heartbeatsToProcess.add(temp);
-						RemoteGrepApplication.LOGGER.info("FailureDetectorServer - consumer.run() - heartbeatQueue element: "+temp.toString());
 					}
 				}
 				
@@ -89,50 +109,51 @@ public class FailureDetectorServer {
 				    while (i.hasNext())
 				    {
 				    	Node node = i.next();
-						if(!node.isSelf(hostaddress))
+				    	
+						// process heartbeat queue updates
+						int equalsComparisons = 0;
+						for(Node updateNode : heartbeatsToProcess)
 						{
-							// process heartbeat queue updates
-							RemoteGrepApplication.LOGGER.info("FailureDetectorServer - consumer.run() - starting to process heartbeat queue updates");
-							int equalsComparisons = 0;
-							for(Node updateNode : heartbeatsToProcess)
+							if(updateNode.equals(node))
 							{
-								if(updateNode.equals(node))
+								equalsComparisons++;
+								if(updateNode.lastUpdatedCompareTo(node) > 0)
 								{
-									equalsComparisons++;
-									// the heartbeat timestamp is larger than the current one
-									if(updateNode.compareTo(node) > 0)
-									{
-										node.setTimestamp(updateNode.getTimestamp());
-									}
+									node.lastUpdatedTimestamp = updateNode.lastUpdatedTimestamp;
 								}
 							}
-							if(equalsComparisons != heartbeatsToProcess.size())
+						}
+						if(equalsComparisons != heartbeatsToProcess.size())
+						{
+							RemoteGrepApplication.LOGGER.warning("FailureDetectorServer - consumer.run() - some of the heartbeats in the queue didn't match the membership list");
+						}
+						
+						// detect failures
+						if(!node.isSelf(hostaddress))
+						{
+							if(node.lastUpdatedTimestamp > 0)
 							{
-								RemoteGrepApplication.LOGGER.warning("FailureDetectorServer - consumer.run() - some of the heartbeats in the queue didn't match the membership list");
-							}
-							
-							long nodeLastUpdate = Long.parseLong(node.getTimestamp());
-							
-							if((nodeLastUpdate+RemoteGrepApplication.timeBoundedFailureInMilli) <
-									currTime)
-							{
-								RemoteGrepApplication.LOGGER.info(new Date().getTime()+" RQ1: FailureDetectorServer - run() - failure detected at node: "+ node.toString());
-
-								System.out.println(new Date().getTime()+" failure detected at node: "+node.toString());
-								// remove from list
-								RemoteGrepApplication.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
-								System.out.println("Removing node: "+node.toString());
-
-								// Remove node from list (must use iterator since that's how we're looping)
-								i.remove();
-								
-								try {
-									// Notify others that node has been removed.
-									broadcast(node, "R");
-								} catch (UnknownHostException e) {
-									e.printStackTrace();
-								} catch (IOException e) {
-									e.printStackTrace();
+								if((node.lastUpdatedTimestamp+RemoteGrepApplication.timeBoundedFailureInMilli) <
+										currTime)
+								{
+									RemoteGrepApplication.LOGGER.info(new Date().getTime()+" RQ1: FailureDetectorServer - run() - failure detected at node: "+ node.verboseToString());
+	
+									System.out.println(new Date().getTime()+" failure detected at node: "+node.verboseToString());
+									// remove from list
+									RemoteGrepApplication.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
+									System.out.println("Removing node: "+node.toString());
+	
+									// Remove node from list (must use iterator since that's how we're looping)
+									i.remove();
+									
+									try {
+										// Notify others that node has been removed.
+										broadcast(node, "R");
+									} catch (UnknownHostException e) {
+										e.printStackTrace();
+									} catch (IOException e) {
+										e.printStackTrace();
+									}
 								}
 							}
 						}
@@ -167,20 +188,23 @@ public class FailureDetectorServer {
 		
 	}
 	
+	/*
+	 * this runnable acts as the producer of heartbeat updates. It waits on receiving 
+	 * updates over a UDP port. Once a message is received, it will add the update to
+	 * the heartbeat queue for the consumer to process.
+	 */
 	public class HeartbeatProducer implements Runnable
 	{
 
+		/*
+		 * This is the main run method for the producer, it is meant to be started 
+		 * only once during the execution of the application.
+		 * 
+		 * @see java.lang.Runnable#run()
+		 */
 		@Override
 		public void run() {
 			RemoteGrepApplication.LOGGER.info("FailureDetectorServer - producer.run() - starting producer");
-			try {
-				socket = new DatagramSocket(RemoteGrepApplication.UDP_FD_PORT);
-			} catch (SocketException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-				RemoteGrepApplication.LOGGER.info("FailureDetectorServer - producer.run() - couldn't start server on port: "+
-						RemoteGrepApplication.UDP_FD_PORT);
-			}
 			
 			while(true)
 			{
@@ -203,7 +227,7 @@ public class FailureDetectorServer {
 					{
 						synchronized(heartbeatQueue)
 						{
-							Node heartbeatNode = new Node(String.valueOf(new Date().getTime()),packet.getAddress().toString().replace("/",""),packet.getPort());
+							Node heartbeatNode = new Node(System.currentTimeMillis(),packet.getAddress().toString().replace("/",""),packet.getPort(),System.currentTimeMillis());
 							heartbeatQueue.add(heartbeatNode);
 							RemoteGrepApplication.LOGGER.info("FailureDetectorServer - producer.run() - added heartbeat node: "+heartbeatNode.toString());
 						}

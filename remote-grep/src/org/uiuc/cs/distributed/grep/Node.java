@@ -1,6 +1,7 @@
 package org.uiuc.cs.distributed.grep;
 
 import java.net.UnknownHostException;
+import java.util.Date;
 
 /**
  * This is a class representation of a grep node. This class could be used to represent a server for which to grep.
@@ -9,9 +10,11 @@ import java.net.UnknownHostException;
  */
 public class Node implements Comparable<Node>
 {
-	private String timestamp = "";
+	private long timestamp;
     private String ip;
     private int    port;
+    public long lastUpdatedTimestamp = -1;
+    
 
     public Node(String ipAndPort)
     {
@@ -25,20 +28,33 @@ public class Node implements Comparable<Node>
 
     public Node(String _ip, int _port) throws IllegalArgumentException
     {
-		this("", _ip, _port);
+		this(new Date().getTime(), _ip, _port);
     }
     
-    public Node(String timestamp, String ip, int port)
+    public Node(long _timestamp, String _ip, int _port)
     {
-    	this.timestamp = timestamp;
-    	this.ip = ip;
-    	this.port = port;
+    	this.timestamp = _timestamp;
+    	this.ip = _ip;
+    	this.port = _port;
+    }
+    
+    public Node(long _timestamp, String _ip, int _port, long _lastUpdatedTimestamp)
+    {
+    	this.timestamp = _timestamp;
+    	this.ip = _ip;
+    	this.port = _port;
+    	this.lastUpdatedTimestamp = _lastUpdatedTimestamp;
     }
 
     @Override
     public int compareTo(Node otherNode)
     {
     	return Long.valueOf(this.getTimestamp()).compareTo(Long.valueOf(otherNode.getTimestamp()));
+    }
+    
+    public int lastUpdatedCompareTo(Node otherNode)
+    {
+    	return Long.valueOf(this.lastUpdatedTimestamp).compareTo(Long.valueOf(otherNode.lastUpdatedTimestamp));
     }
 
     @Override
@@ -63,13 +79,8 @@ public class Node implements Comparable<Node>
     {
         return this.port;
     }
-    
-    public void setTimestamp(String _timestamp)
-    {
-    	this.timestamp = _timestamp;
-    }
 
-    public String getTimestamp()
+    public long getTimestamp()
     {
     	return this.timestamp;
     }
@@ -93,5 +104,10 @@ public class Node implements Comparable<Node>
     public String toString()
     {
         return this.timestamp + ":" + this.ip + ":" + this.port;
+    }
+    
+    public String verboseToString()
+    {
+    	return "<Node "+this.timestamp + ":" + this.ip + ":" + this.port + ", lastUpdated: " +this.lastUpdatedTimestamp+">";
     }
 }
