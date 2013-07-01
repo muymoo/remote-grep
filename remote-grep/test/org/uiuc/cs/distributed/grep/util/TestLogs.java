@@ -6,8 +6,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
 
-import org.uiuc.cs.distributed.grep.RemoteGrepApplication;
-
 /**
  * This class helps create sample log files with dummy data of a specified size.
  * 
@@ -68,7 +66,7 @@ public class TestLogs
             FileWriter fileWriter = null;
             BufferedWriter bufferedWriter = null;
 
-            File dummyLogFile = new File("machine."
+            File dummyLogFile = new File("/tmp/cs425_momontbowling3/machine."
                     + machineNumber + ".log");
 
             fileWriter = new FileWriter(dummyLogFile.getAbsoluteFile());

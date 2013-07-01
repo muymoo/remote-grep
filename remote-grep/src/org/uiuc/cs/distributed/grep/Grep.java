@@ -1,6 +1,7 @@
 package org.uiuc.cs.distributed.grep;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -20,7 +21,7 @@ public class Grep
         try
         {
             // Use a shell so we can use wildcard (*) for the machine.*.log with ProcessBuilder
-            process = new ProcessBuilder("/bin/sh", "-c", "grep " + regex + " /tmp/cs425_momontbowling2/machine*")
+            process = new ProcessBuilder("/bin/sh", "-c", "grep " + regex + " " + RemoteGrepApplication.logLocation + File.separator + "machine*")
                     .redirectErrorStream(true).start();
 
             BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
