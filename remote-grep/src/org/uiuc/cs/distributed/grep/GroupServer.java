@@ -6,8 +6,11 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.List;
 
+/**
+ * This is the join server that will be run on the introducer node. All join requests are handled by this node.
+ * @author matt
+ */
 public class GroupServer extends Thread {
 	protected DatagramSocket socket = null;
 	protected volatile boolean alive = true;
@@ -20,33 +23,40 @@ public class GroupServer extends Thread {
 		super(name);
 	}
 
+	/**
+	 * Interrupt server and clean up sockets.
+	 */
 	public void stopServer()
 	{
 		alive = false;
 		super.interrupt();
 		socket.close();
 	}
-	
+
+	/**
+	 * Start listening for join requests. Either add the new node or swap it for
+	 * an older instance in the case where the timestamps are different.
+	 */
 	public void run() {
 		try {
 			socket = new DatagramSocket(RemoteGrepApplication.UDP_PORT);
 		} catch (SocketException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			RemoteGrepApplication.LOGGER.severe("GroupServer - run() - Socket is already in use: " + RemoteGrepApplication.UDP_PORT);
+			return;
 		}
 		while (alive) {
 			try {
 				byte[] buf = new byte[256];
 
 				// receive join request
-				System.out.println("Waiting to recieve join requests. Hit me up. (e) to exit");
+				System.out.println("Waiting to recieve join requests. (e) to exit");
+				
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
 				socket.receive(packet);
-				System.out.println("Oooh, somebody wants to join the party.");
 				String timestamp = new String (packet.getData(), 0, packet.getLength(), "UTF-8");
 				
 				// Add node to group list				
-				System.out.println("Timestamp added: " + timestamp);
+				RemoteGrepApplication.LOGGER.info("GroupServer - run() - Join request recieved");
 				Node newNode = new Node(Long.parseLong(timestamp), packet.getAddress().getHostAddress(), packet.getPort());
 				
 				synchronized(RemoteGrepApplication.groupMembershipList)
@@ -73,8 +83,6 @@ public class GroupServer extends Thread {
 						}	
 					}
 				}
-				
-
 				
 				System.out.println("Let's see if anyone else shows up.");
 
@@ -124,6 +132,7 @@ public class GroupServer extends Thread {
 
 		if(!FailureDetectorClient.isRandomFailure())
 		{
+			RemoteGrepApplication.LOGGER.info("GroupServer - broadcast() - Broadcasting updated to all nodes in UDP group.");
 			System.out.println("Notifying group about membership change: " + nodeChangedMessage);
 			InetAddress group = InetAddress.getByName(RemoteGrepApplication.UDP_MC_GROUP);
 			DatagramPacket groupListPacket = new DatagramPacket(
@@ -132,6 +141,12 @@ public class GroupServer extends Thread {
 		}
 	}
 
+	/**
+	 * Sends a full group list to the new node.
+	 * 
+	 * @param newNode Node that needs a complete list
+	 * @throws IOException
+	 */
 	private void sendGroupList(Node newNode) throws IOException {
 		byte[] buf;
 		InetAddress address = InetAddress.getByName(newNode.getIP());
@@ -166,6 +181,11 @@ public class GroupServer extends Thread {
 		}
 	}
 
+	/**
+	 * Updates local membership list and broadcasts add node message to all other members
+	 * 
+	 * @param newNode Node to add to group
+	 */
 	private void addNewNode(Node newNode) {
 		String groupList;
 		synchronized(RemoteGrepApplication.groupMembershipList)
@@ -174,7 +194,8 @@ public class GroupServer extends Thread {
 			groupList = RemoteGrepApplication.groupMembershipList.toString();
 		}
 		System.out.println("New Node added successfully: " + newNode.toString());
-		System.out.println("Group list: " + groupList);
+		System.out.println("Updated Group list: " + groupList);
+		RemoteGrepApplication.LOGGER.info("GroupServer - addNewNode() - New node added successfully: " + newNode);
 		
 		try {
 			sendGroupList(newNode);
@@ -186,5 +207,4 @@ public class GroupServer extends Thread {
 			e.printStackTrace();
 		}
 	}
-
 }

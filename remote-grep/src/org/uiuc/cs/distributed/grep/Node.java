@@ -1,6 +1,5 @@
 package org.uiuc.cs.distributed.grep;
 
-import java.net.UnknownHostException;
 import java.util.Date;
 
 /**

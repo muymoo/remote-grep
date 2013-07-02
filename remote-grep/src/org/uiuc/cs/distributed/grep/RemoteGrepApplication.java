@@ -18,9 +18,9 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 /**
- * Main entry to the distributed grep program. This should be started on each
+ * Main entry to the distributed grep and group membership program. This should be started on each
  * node you want to query. The default nodes are linux[5-7] whose IP's are hard
- * coded. The default log location is in /tmp/cs425_momontbowling2/.
+ * coded. The default log location is in /tmp/cs425_momontbowling3/logs.
  * 
  * @author matt
  * @author evan
@@ -30,7 +30,7 @@ public class RemoteGrepApplication {
 	public static final int TCP_PORT = 4444;
 	public static final int UDP_PORT = 4445;
 	public static final int UDP_MC_PORT = 4446;
-	public static final int UDP_FD_PORT = 4447;      // port for failure detection
+	public static final int UDP_FD_PORT = 4447; // port for failure detection
 	public static final String UDP_MC_GROUP = "228.5.6.7";
 	public static final int timeBoundedFailureInMilli = 5000;
 	public static Logger LOGGER;
@@ -52,6 +52,13 @@ public class RemoteGrepApplication {
 			.synchronizedList(new ArrayList<Node>());
 	private String hostaddress = "";
 
+	/**
+	 * Main server. The log location is where the server logs will be stored as
+	 * well as where grep will search.
+	 * 
+	 * @param newLogLocation
+	 *            Location to store logs.
+	 */
 	private RemoteGrepApplication(String newLogLocation) {
 		String hostname = "linux5";
 		try {
@@ -92,17 +99,16 @@ public class RemoteGrepApplication {
 		}
 		return instance;
 	}
-	
+
 	/**
-	 * Configures/starts the failure detection threads and sets the intentional message
-	 * failure rate
+	 * Configures/starts the failure detection threads and sets the intentional
+	 * message failure rate
 	 * 
-	 * @param messageFailureRate - a percentage represented as a double in the range [0,1]
+	 * @param messageFailureRate
+	 *            - a percentage represented as a double in the range [0,1]
 	 */
-	public void configureFailureDetection(double messageFailureRate)
-	{
-		if(messageFailureRate <= 0.0 || messageFailureRate > 1.0)
-		{
+	public void configureFailureDetection(double messageFailureRate) {
+		if (messageFailureRate <= 0.0 || messageFailureRate > 1.0) {
 			FailureDetectorClient.messageFailureRate = 0.0;
 		} else {
 			FailureDetectorClient.messageFailureRate = messageFailureRate;
@@ -117,7 +123,6 @@ public class RemoteGrepApplication {
 	 * The main driver function. This function calls sever preparation function,
 	 * prompts the user for input, and delegates tasks based on the user's
 	 * requests.
-	 * 
 	 */
 	public void run() {
 		startGrepServer(); // listen for incoming grep requests.
@@ -130,19 +135,18 @@ public class RemoteGrepApplication {
 		} catch (UnknownHostException e1) {
 			LOGGER.warning("RemoteGrepApplication - run() - failed to identify host");
 		}
-
-		synchronized(groupMembershipList)
-		{
-			// If this is the introducer node, start listening for incoming requests
-			// now.
-			if (hostaddress.equals(LINUX_5)) {
-				// Add Linux5 as the first member
-				Node newNode = new Node(System.currentTimeMillis(), hostaddress,
-						Integer.valueOf(UDP_PORT));
-				groupMembershipList.add(newNode);
+		// If this is the introducer node, start listening for incoming requests
+		if (hostaddress.equals(LINUX_5)) {
+			synchronized (groupMembershipList) {
 	
+				// Add Linux5 as the first member
+				Node newNode = new Node(System.currentTimeMillis(),
+						hostaddress, Integer.valueOf(UDP_PORT));
+				groupMembershipList.add(newNode);
+
 				startGroupServer();
-				System.out.println("Group Server started");
+				LOGGER.info("RemoteGrepApplication - run() - Listening for join requests.");
+				System.out.println("Group Server started. Listening for join requests.");
 			}
 		}
 
@@ -156,7 +160,7 @@ public class RemoteGrepApplication {
 			try {
 				input = bufferedReader.readLine();
 
-				// Add a node to query
+				// Add a node to grep
 				if ("a".equals(input.trim())) {
 					System.out
 							.println("Enter IP and port (e.g. \"1.2.3.4:4444\"): ");
@@ -165,16 +169,15 @@ public class RemoteGrepApplication {
 				}
 				// Add node to group membership list
 				else if ("j".equals(input.trim())) {
-					if(!groupMembershipList.contains(new Node(System.currentTimeMillis(),hostaddress,4445)))
-					{
+					if (!groupMembershipList.contains(new Node(System
+							.currentTimeMillis(), hostaddress, 4445))) {
 						joinGroup();
-					}
-					else
-					{
-						System.out.println("Node " + hostaddress +" is already part of the group.");
+					} else {
+						System.out.println("Node " + hostaddress
+								+ " is already part of the group.");
 					}
 				}
-				// Add Default nodes
+				// Add Default nodes to grep
 				else if ("d".equals(input.trim())) {
 					addDefaultNodes();
 				} else if ("g".equals(input.trim())) {
@@ -192,20 +195,19 @@ public class RemoteGrepApplication {
 
 					System.out.println("Total Time: " + (end - start) + "ms");
 				}
-				else if ("l".equals(input.trim()))
-				{
+				// Leave group list
+				else if ("l".equals(input.trim())) {
 					System.out.println("Leaving group by choice.");
 					leaveGroup();
 				}
 				// Exit
 				else if ("e".equals(input.trim())) {
-					
+
 					System.out.println("Stopping membership server.");
 					stopGroupServer();
 					System.out.println("Stopping membership client.");
-					
-					if(groupClient != null)
-					{
+
+					if (groupClient != null) {
 						groupClient.interrupt();
 						groupClient.stopClient();
 						try {
@@ -214,13 +216,11 @@ public class RemoteGrepApplication {
 							e.printStackTrace();
 						}
 					}
-					
+
 					System.out.println("Stopping heartbeats.");
 					failureDetectorServer.stop();
 					failureDetectorClient.stop();
-					
 					stopGrepServer();
-					// TODO: stopGroupClient if we aren't the leader?
 					break;
 				}
 			} catch (IOException e) {
@@ -239,23 +239,26 @@ public class RemoteGrepApplication {
 		}
 	}
 
+	/**
+	 * 	Present menu to the user
+	 */
 	private void promptUserForInput() {
-		synchronized(groupMembershipList)
-		{
-			if (groupMembershipList.contains(new Node(System.currentTimeMillis(), hostaddress, 1111))) {
+		synchronized (groupMembershipList) {
+			if (groupMembershipList.contains(new Node(System
+					.currentTimeMillis(), hostaddress, 1111))) {
 				System.out.println("(l) Leave group");
 			} else {
 				System.out.println("(j) Join group");
 			}
 		}
-		System.out.println("(g) Current memebership list");
+		System.out.println("(g) Current membership list");
 		System.out.println("(a) Add node ((d) adds default nodes)");
 		System.out.println("(q) Query logs");
 		System.out.println("(e) Exit");
 	}
 
 	/**
-	 * Creates a task for each of the default linux nodes (linux[5-7])
+	 * Creates a grep task for each of the default linux nodes (linux[5-7])
 	 */
 	public void addDefaultNodes() {
 		for (String server : servers) {
@@ -263,14 +266,19 @@ public class RemoteGrepApplication {
 		}
 	}
 
+	/**
+	 * Start client that joins the membership group
+	 */
 	public void joinGroup() {
-		// Send IP to Linux7
 		groupClient = new GroupClient(new Node(LINUX_5 + ":" + UDP_PORT));
 		groupClient.start();
 	}
-	
-	public void leaveGroup()
-	{
+
+	/**
+	 * Voluntarily leave the group. This method notifies other nodes that it is
+	 * leaving so they can quickly remove them from their list.
+	 */
+	public void leaveGroup() {
 		System.out.println("Stopping membership server.");
 		stopGroupServer();
 		System.out.println("Stopping membership client.");
@@ -278,22 +286,22 @@ public class RemoteGrepApplication {
 		System.out.println("Stopping heartbeats.");
 		failureDetectorServer.stop();
 		failureDetectorClient.stop();
-		
+
 		try {
-			Node thisNode = new Node(111L,hostaddress,1111);
-			
+			Node thisNode = new Node(111L, hostaddress, 1111);
+
 			System.out.println("Notify all nodes that I'm leaving.");
-			if(groupMembershipList.contains(thisNode))
-			{
+			if (groupMembershipList.contains(thisNode)) {
 				// Tell all nodes to remove this node from their lists
-				broadcast(groupMembershipList.get(groupMembershipList.indexOf(thisNode)), "R");
+				broadcast(groupMembershipList.get(groupMembershipList
+						.indexOf(thisNode)), "R");
 			}
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		groupMembershipList.clear();
 		System.out.println("Group membership list cleared on this node.");
 	}
@@ -341,10 +349,16 @@ public class RemoteGrepApplication {
 		grepTasks.add(new GrepTask(node));
 	}
 
+	/**
+	 * Start group server to listen for incoming join requests
+	 */
 	public void startGroupServer() {
 		groupServer.start();
 	}
 
+	/**
+	 * Interrupt the group server
+	 */
 	public void stopGroupServer() {
 		if (groupServer.isAlive()) {
 			groupServer.stopServer();
@@ -352,7 +366,7 @@ public class RemoteGrepApplication {
 				groupServer.join();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-				LOGGER.warning("Could not join GroupServer thread. Abort ship! Ctrl+C");
+				LOGGER.warning("Could not join GroupServer thread.");
 			}
 		}
 	}
@@ -393,33 +407,41 @@ public class RemoteGrepApplication {
 	}
 
 	/**
-	 * Sends a multicast message to all nodes telling them to perform an action on this node in their list.
+	 * Sends a multicast message to all nodes telling them to perform an action
+	 * on this node in their list.
 	 * 
-	 * @param node Notify others about some change that happened to this node
-	 * @param action Could be an Add "A" or Remove "R" event
+	 * @param node
+	 *            Notify others about some change that happened to this node
+	 * @param action
+	 *            Could be an Add "A" or Remove "R" event
 	 * @throws UnknownHostException
 	 * @throws IOException
 	 */
-	public void broadcast(Node node, String action) throws UnknownHostException,
-			IOException {
+	public void broadcast(Node node, String action)
+			throws UnknownHostException, IOException {
 		// Notify all nodes of group list change
 		byte[] nodeChangedBuffer = new byte[256];
-		DatagramSocket socket = new DatagramSocket(RemoteGrepApplication.UDP_MC_PORT);
+		DatagramSocket socket = new DatagramSocket(
+				RemoteGrepApplication.UDP_MC_PORT);
 		String nodeChangedMessage = action + ":" + node;
 		nodeChangedBuffer = nodeChangedMessage.getBytes();
 
-		System.out.println("Notifying group about membership change: " + nodeChangedMessage);
-		InetAddress group = InetAddress.getByName(RemoteGrepApplication.UDP_MC_GROUP);
-		DatagramPacket groupListPacket = new DatagramPacket(
-				nodeChangedBuffer, nodeChangedBuffer.length, group, RemoteGrepApplication.UDP_MC_PORT);
+		System.out.println("Notifying group about membership change: "
+				+ nodeChangedMessage);
+		InetAddress group = InetAddress
+				.getByName(RemoteGrepApplication.UDP_MC_GROUP);
+		DatagramPacket groupListPacket = new DatagramPacket(nodeChangedBuffer,
+				nodeChangedBuffer.length, group,
+				RemoteGrepApplication.UDP_MC_PORT);
 		socket.send(groupListPacket);
 		socket.close();
 	}
-	
-	/*
-	 * entry function for running the application
+
+	/**
+	 * Entry function for running the application
 	 * 
-	 * @param args - used to read in the new logs location
+	 * @param args
+	 *            - used to read in the new logs location
 	 */
 	public static void main(String[] args) {
 		if (args.length == 1) {
@@ -427,7 +449,7 @@ public class RemoteGrepApplication {
 			RemoteGrepApplication app = new RemoteGrepApplication(args[0]);
 			app.configureFailureDetection(0);
 			app.run();
-		} else if( args.length == 2){
+		} else if (args.length == 2) {
 			RemoteGrepApplication app = new RemoteGrepApplication(args[0]);
 			app.configureFailureDetection(Double.parseDouble(args[1]));
 			app.run();

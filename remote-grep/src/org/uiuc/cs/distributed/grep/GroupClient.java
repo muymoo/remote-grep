@@ -9,6 +9,14 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
+/**
+ * This class is responsible for sending the join request to an introducer (in
+ * our case, linux5). It then listens to recieve broadcast about group
+ * membership changes.
+ * 
+ * @author matt
+ * 
+ */
 public class GroupClient extends Thread {
 	private Node node;
 	private MulticastSocket socket = null;
@@ -19,6 +27,9 @@ public class GroupClient extends Thread {
 		this.node = node;
 	}
 
+	/**
+	 * Interrupt client and clean up sockets.
+	 */
 	public void stopClient()
 	{
 		super.interrupt();
@@ -35,7 +46,9 @@ public class GroupClient extends Thread {
 		}
 	}
 	
-	// Asks to join LINUX_5 group and join multicast group
+	/**
+	 * Asks to join LINUX_5 group and join multicast UDP group
+	 */
 	public void run() {
 		boolean result = sendJoinRequest();
 		if (result && !RemoteGrepApplication.groupMembershipList.isEmpty()) {
@@ -54,10 +67,12 @@ public class GroupClient extends Thread {
 					byte[] buf = new byte[256];
 					DatagramPacket packet = new DatagramPacket(buf, buf.length);
 					System.out.println("Waiting to recieve broadcast.");
+					RemoteGrepApplication.LOGGER.info("GroupClient - run() - Waiting to receive broadcast");
 
 					try {
 						socket.receive(packet);
 					} catch (IOException e) {
+						RemoteGrepApplication.LOGGER.info("GroupClient - run() - Receiving membership updates interrupted");
 						System.out.println("Receiving membership updates interrupted.");
 						break;
 					} 
@@ -73,27 +88,29 @@ public class GroupClient extends Thread {
 						synchronized(RemoteGrepApplication.groupMembershipList)
 						{
 							if (action.equals("A")) {
+								RemoteGrepApplication.LOGGER.info("GroupClient - run() - Adding node " + updatedNode + " to list.");
 								RemoteGrepApplication.groupMembershipList
 										.add(updatedNode);
 							} else if (action.equals("R")) {
+								RemoteGrepApplication.LOGGER.info("GroupClient - run() - Removing node " + updatedNode + " from list.");
 								RemoteGrepApplication.groupMembershipList
 										.remove(updatedNode);
 							}
-		
-							System.out.println("Updated membership list: "
-									+ RemoteGrepApplication.groupMembershipList);
+							
+							RemoteGrepApplication.LOGGER.info("GroupClient - run() - Updated membership list: " + RemoteGrepApplication.groupMembershipList);
+							System.out.println("Updated membership list: " + RemoteGrepApplication.groupMembershipList);
 						}
 					}
 				}
 			} catch (IOException e1) {
-				System.out.println("Leaving group. Peace.");
-
-				e1.printStackTrace();
+				System.out.println("Leaving group.");
+				RemoteGrepApplication.LOGGER.info("GroupClient - run() - Leaving group.");
 			} finally {
 				try {
 					socket.leaveGroup(group);
 				} catch (IOException e) {
 					System.out.println("Already have left the UDP group.");
+					RemoteGrepApplication.LOGGER.info("GroupClient - run() - Already have left the UDP group.");
 				}
 				socket.close();
 			}	
@@ -109,7 +126,8 @@ public class GroupClient extends Thread {
 		// So we can uniquely identify this node (we can get IP/port from packet
 		// by default)
 		String joinRequest = String.valueOf(System.currentTimeMillis());
-
+		RemoteGrepApplication.LOGGER.info("GroupClient - sendJoinRequest() - Sending join request: " + joinRequest);
+		
 		InetAddress address = null;
 		try {
 			address = InetAddress.getByName(node.getIP());
@@ -122,6 +140,7 @@ public class GroupClient extends Thread {
 			sendData(address, joinRequest);
 		} catch (IOException e) {
 			e.printStackTrace();
+			RemoteGrepApplication.LOGGER.warning("GroupClient - sendJoinRequest() - Join request failed. Is linux5 down?");
 			return false;
 		}
 
@@ -214,6 +233,14 @@ public class GroupClient extends Thread {
 		return new Node(Long.parseLong(parts[1]), parts[2], Integer.valueOf(parts[3].trim()));
 	}
 	
+	/**
+	 * Gets the action that a message wants to be performed. This is the first
+	 * value of the message. 
+	 * 
+	 * @param addGroupMemberMessage
+	 *            ACTION:TIMESTAMP:IP:PORT
+	 * @return Action to perform. Null if message is not in correct format.
+	 */
 	private String parseActionFromMessage(String addGroupMemberMessage) {
 		String[] parts = addGroupMemberMessage.split(":");
 		if(parts.length != 4)
@@ -225,7 +252,10 @@ public class GroupClient extends Thread {
 	}
 
 	/** 
-	 * function for sending
+	 * Send a string of data to an address over UDP
+	 * 
+	 * @param target Target address
+	 * @param data Content to send to target
 	 */
 	private void sendData(InetAddress target, String data) throws IOException {
 		if(!FailureDetectorClient.isRandomFailure())
@@ -244,7 +274,6 @@ public class GroupClient extends Thread {
 			
 			DatagramPacket datagram = new DatagramPacket(data.getBytes("utf-8"),
 					buf.length, target, RemoteGrepApplication.UDP_PORT);
-			System.out.println("Sending: " + datagram.toString());
 			socket.send(datagram);
 			socket.close();
 		}

@@ -8,7 +8,7 @@ import java.io.InputStreamReader;
 public class Grep
 {
     /**
-     * Runs grep on /tmp/machine.1.log
+     * Runs grep on /tmp/LOG_LOCATION/logs/*
      * 
      * @param regex
      *            - Regular expression to search with. This may include flags at the begining.
@@ -20,8 +20,8 @@ public class Grep
         String result = "";
         try
         {
-            // Use a shell so we can use wildcard (*) for the machine.*.log with ProcessBuilder
-            process = new ProcessBuilder("/bin/sh", "-c", "grep " + regex + " " + RemoteGrepApplication.logLocation + File.separator + "machine*")
+            // Use a shell so we can use wildcard (*) for the with ProcessBuilder
+            process = new ProcessBuilder("/bin/sh", "-c", "grep " + regex + " " + RemoteGrepApplication.logLocation + File.separator + "logs/*")
                     .redirectErrorStream(true).start();
 
             BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
