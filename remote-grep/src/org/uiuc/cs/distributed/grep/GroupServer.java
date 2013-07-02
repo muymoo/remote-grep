@@ -103,7 +103,9 @@ public class GroupServer extends Thread {
 		{
 			RemoteGrepApplication.groupMembershipList.remove(oldNode);
 		}
+		RemoteGrepApplication.LOGGER.info("GroupServer - addNewNode() - Old node removed successfully: " + oldNode);
 		System.out.println("Everyone should remove: " + oldNode);
+		
 		try {
 			broadcast(oldNode, "R");
 		} catch (UnknownHostException e) {

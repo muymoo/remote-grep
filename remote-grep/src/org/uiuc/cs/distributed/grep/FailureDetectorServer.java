@@ -194,8 +194,6 @@ public class FailureDetectorServer {
 					nodeChangedBuffer, nodeChangedBuffer.length, group, RemoteGrepApplication.UDP_MC_PORT);
 			socket.send(groupListPacket);
 		}
-
-		
 	}
 	
 	/*

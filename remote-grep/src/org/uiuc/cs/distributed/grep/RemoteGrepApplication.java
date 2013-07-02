@@ -279,6 +279,7 @@ public class RemoteGrepApplication {
 	 * leaving so they can quickly remove them from their list.
 	 */
 	public void leaveGroup() {
+
 		System.out.println("Stopping membership server.");
 		stopGroupServer();
 		System.out.println("Stopping membership client.");
@@ -304,6 +305,7 @@ public class RemoteGrepApplication {
 
 		groupMembershipList.clear();
 		System.out.println("Group membership list cleared on this node.");
+		RemoteGrepApplication.LOGGER.info("RemoteGrepApplicatoin - leaveGroup() - Left group.");
 	}
 
 	/**
