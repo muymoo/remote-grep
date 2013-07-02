@@ -18,9 +18,10 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 /**
- * Main entry to the distributed grep and group membership program. This should be started on each
- * node you want to query. The default nodes are linux[5-7] whose IP's are hard
- * coded. The default log location is in /tmp/cs425_momontbowling3/logs.
+ * Main entry to the distributed grep and group membership program. This should
+ * be started on each node you want to query. The default nodes are linux[5-7]
+ * whose IP's are hard coded. The default log location is in
+ * /tmp/cs425_momontbowling3/logs.
  * 
  * @author matt
  * @author evan
@@ -138,7 +139,7 @@ public class RemoteGrepApplication {
 		// If this is the introducer node, start listening for incoming requests
 		if (hostaddress.equals(LINUX_5)) {
 			synchronized (groupMembershipList) {
-	
+
 				// Add Linux5 as the first member
 				Node newNode = new Node(System.currentTimeMillis(),
 						hostaddress, Integer.valueOf(UDP_PORT));
@@ -146,7 +147,8 @@ public class RemoteGrepApplication {
 
 				startGroupServer();
 				LOGGER.info("RemoteGrepApplication - run() - Listening for join requests.");
-				System.out.println("Group Server started. Listening for join requests.");
+				System.out
+						.println("Group Server started. Listening for join requests.");
 			}
 		}
 
@@ -240,7 +242,7 @@ public class RemoteGrepApplication {
 	}
 
 	/**
-	 * 	Present menu to the user
+	 * Present menu to the user
 	 */
 	private void promptUserForInput() {
 		synchronized (groupMembershipList) {
@@ -282,8 +284,10 @@ public class RemoteGrepApplication {
 
 		System.out.println("Stopping membership server.");
 		stopGroupServer();
-		System.out.println("Stopping membership client.");
-		groupClient.stopClient();
+		if (groupClient != null) {
+			System.out.println("Stopping membership client.");
+			groupClient.stopClient();
+		}
 		System.out.println("Stopping heartbeats.");
 		failureDetectorServer.stop();
 		failureDetectorClient.stop();
@@ -305,7 +309,8 @@ public class RemoteGrepApplication {
 
 		groupMembershipList.clear();
 		System.out.println("Group membership list cleared on this node.");
-		RemoteGrepApplication.LOGGER.info("RQ1: RemoteGrepApplicatoin - leaveGroup() - Left group.");
+		RemoteGrepApplication.LOGGER
+				.info("RQ1: RemoteGrepApplicatoin - leaveGroup() - Left group.");
 	}
 
 	/**
