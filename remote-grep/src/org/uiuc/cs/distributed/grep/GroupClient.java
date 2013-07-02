@@ -60,7 +60,7 @@ public class GroupClient extends Thread {
 				System.out.println("Joining UDP Group "+RemoteGrepApplication.UDP_MC_GROUP);
 				RemoteGrepApplication.LOGGER.info("GroupClient - run() - started multicast UDP server on port: " +
 								RemoteGrepApplication.UDP_MC_PORT);
-				RemoteGrepApplication.LOGGER.info("GroupClient - run() - joined multicast group: "+
+				RemoteGrepApplication.LOGGER.info("RQ1: GroupClient - run() - joined multicast group: "+
 								RemoteGrepApplication.UDP_MC_GROUP);
 				
 				while(!Thread.currentThread().isInterrupted()){
@@ -88,11 +88,11 @@ public class GroupClient extends Thread {
 						synchronized(RemoteGrepApplication.groupMembershipList)
 						{
 							if (action.equals("A")) {
-								RemoteGrepApplication.LOGGER.info("GroupClient - run() - Adding node " + updatedNode + " to list.");
+								RemoteGrepApplication.LOGGER.info("RQ1: GroupClient - run() - Adding node " + updatedNode + " to list.");
 								RemoteGrepApplication.groupMembershipList
 										.add(updatedNode);
 							} else if (action.equals("R")) {
-								RemoteGrepApplication.LOGGER.info("GroupClient - run() - Removing node " + updatedNode + " from list.");
+								RemoteGrepApplication.LOGGER.info("RQ1: GroupClient - run() - Removing node " + updatedNode + " from list.");
 								RemoteGrepApplication.groupMembershipList
 										.remove(updatedNode);
 							}
@@ -126,7 +126,7 @@ public class GroupClient extends Thread {
 		// So we can uniquely identify this node (we can get IP/port from packet
 		// by default)
 		String joinRequest = String.valueOf(System.currentTimeMillis());
-		RemoteGrepApplication.LOGGER.info("GroupClient - sendJoinRequest() - Sending join request: " + joinRequest);
+		RemoteGrepApplication.LOGGER.info("RQ1: GroupClient - sendJoinRequest() - Sending join request: " + joinRequest);
 		
 		InetAddress address = null;
 		try {
@@ -140,7 +140,7 @@ public class GroupClient extends Thread {
 			sendData(address, joinRequest);
 		} catch (IOException e) {
 			e.printStackTrace();
-			RemoteGrepApplication.LOGGER.warning("GroupClient - sendJoinRequest() - Join request failed. Is linux5 down?");
+			RemoteGrepApplication.LOGGER.warning("RQ1: GroupClient - sendJoinRequest() - Join request failed. Is linux5 down?");
 			return false;
 		}
 

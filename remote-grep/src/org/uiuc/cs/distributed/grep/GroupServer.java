@@ -56,7 +56,7 @@ public class GroupServer extends Thread {
 				String timestamp = new String (packet.getData(), 0, packet.getLength(), "UTF-8");
 				
 				// Add node to group list				
-				RemoteGrepApplication.LOGGER.info("GroupServer - run() - Join request recieved");
+				RemoteGrepApplication.LOGGER.info("RQ1: GroupServer - run() - Join request recieved");
 				Node newNode = new Node(Long.parseLong(timestamp), packet.getAddress().getHostAddress(), packet.getPort());
 				
 				synchronized(RemoteGrepApplication.groupMembershipList)
@@ -103,7 +103,7 @@ public class GroupServer extends Thread {
 		{
 			RemoteGrepApplication.groupMembershipList.remove(oldNode);
 		}
-		RemoteGrepApplication.LOGGER.info("GroupServer - addNewNode() - Old node removed successfully: " + oldNode);
+		RemoteGrepApplication.LOGGER.info("RQ1: GroupServer - addNewNode() - Old node removed successfully: " + oldNode);
 		System.out.println("Everyone should remove: " + oldNode);
 		
 		try {
@@ -134,7 +134,7 @@ public class GroupServer extends Thread {
 
 		if(!FailureDetectorClient.isRandomFailure())
 		{
-			RemoteGrepApplication.LOGGER.info("GroupServer - broadcast() - Broadcasting updated to all nodes in UDP group.");
+			RemoteGrepApplication.LOGGER.info("RQ1: GroupServer - broadcast() - Broadcasting updated to all nodes in UDP group.");
 			System.out.println("Notifying group about membership change: " + nodeChangedMessage);
 			InetAddress group = InetAddress.getByName(RemoteGrepApplication.UDP_MC_GROUP);
 			DatagramPacket groupListPacket = new DatagramPacket(
@@ -197,7 +197,7 @@ public class GroupServer extends Thread {
 		}
 		System.out.println("New Node added successfully: " + newNode.toString());
 		System.out.println("Updated Group list: " + groupList);
-		RemoteGrepApplication.LOGGER.info("GroupServer - addNewNode() - New node added successfully: " + newNode);
+		RemoteGrepApplication.LOGGER.info("RQ1: GroupServer - addNewNode() - New node added successfully: " + newNode);
 		
 		try {
 			sendGroupList(newNode);

@@ -305,7 +305,7 @@ public class RemoteGrepApplication {
 
 		groupMembershipList.clear();
 		System.out.println("Group membership list cleared on this node.");
-		RemoteGrepApplication.LOGGER.info("RemoteGrepApplicatoin - leaveGroup() - Left group.");
+		RemoteGrepApplication.LOGGER.info("RQ1: RemoteGrepApplicatoin - leaveGroup() - Left group.");
 	}
 
 	/**
