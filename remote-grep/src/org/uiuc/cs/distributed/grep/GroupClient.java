@@ -51,7 +51,7 @@ public class GroupClient extends Thread {
 	 */
 	public void run() {
 		boolean result = sendJoinRequest();
-		if (result && !Application.groupMembershipList.isEmpty()) {
+		if (result && !Application.getInstance().group.list.isEmpty()) {
 			try {
 				socket = new MulticastSocket(Application.UDP_MC_PORT);
 				group = InetAddress.getByName(Application.UDP_MC_GROUP);
@@ -85,20 +85,20 @@ public class GroupClient extends Thread {
 
 					if(action != null && updatedNode != null) 
 					{
-						synchronized(Application.groupMembershipList)
+						synchronized(Application.getInstance().group.list)
 						{
 							if (action.equals("A")) {
 								Application.LOGGER.info("RQ1: GroupClient - run() - Adding node " + updatedNode + " to list.");
-								Application.groupMembershipList
+								Application.getInstance().group.list
 										.add(updatedNode);
 							} else if (action.equals("R")) {
 								Application.LOGGER.info("RQ1: GroupClient - run() - Removing node " + updatedNode + " from list.");
-								Application.groupMembershipList
+								Application.getInstance().group.list
 										.remove(updatedNode);
 							}
 							
-							Application.LOGGER.info("GroupClient - run() - Updated membership list: " + Application.groupMembershipList);
-							System.out.println("Updated membership list: " + Application.groupMembershipList);
+							Application.LOGGER.info("GroupClient - run() - Updated membership list: " + Application.getInstance().group.list);
+							System.out.println("Updated membership list: " + Application.getInstance().group.list);
 						}
 					}
 				}
@@ -195,11 +195,11 @@ public class GroupClient extends Thread {
 					addGroupMemberPacket.getData(), 0,
 					addGroupMemberPacket.getLength());
 
-			synchronized(Application.groupMembershipList)
+			synchronized(Application.getInstance().group.list)
 			{
 				if (addGroupMemberMessage.equalsIgnoreCase("END")) {
 					System.out.println("Recieved updated group list: "
-							+ Application.groupMembershipList);
+							+ Application.getInstance().group.list);
 					receivingGroupList = false;
 					break;
 				}
@@ -207,9 +207,9 @@ public class GroupClient extends Thread {
 
 
 			Node nodeToAdd = parseNodeFromMessage(addGroupMemberMessage);
-			synchronized(Application.groupMembershipList)
+			synchronized(Application.getInstance().group.list)
 			{
-				Application.groupMembershipList.add(nodeToAdd);
+				Application.getInstance().group.list.add(nodeToAdd);
 			}
 		}
 

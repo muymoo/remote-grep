@@ -59,9 +59,9 @@ public class GroupServer extends Thread {
 				Application.LOGGER.info("RQ1: GroupServer - run() - Join request recieved");
 				Node newNode = new Node(Long.parseLong(timestamp), packet.getAddress().getHostAddress(), packet.getPort());
 				
-				synchronized(Application.groupMembershipList)
+				synchronized(Application.getInstance().group.list)
 				{
-					if(!Application.groupMembershipList.contains(newNode))
+					if(!Application.getInstance().group.list.contains(newNode))
 					{
 						System.out.println("We have not seen this node before, let's add it.");
 						addNewNode(newNode);
@@ -69,7 +69,7 @@ public class GroupServer extends Thread {
 					else
 					{
 						System.out.println("This node is trying to rejoin, it must have crashed before.");
-						Node oldNode = Application.groupMembershipList.get(Application.groupMembershipList.indexOf(newNode));
+						Node oldNode = Application.getInstance().group.list.get(Application.getInstance().group.list.indexOf(newNode));
 						// If the newNode's time stamp is greater than the old one, add it to the list
 						if(newNode.compareTo(oldNode) > 0)
 						{
@@ -99,9 +99,9 @@ public class GroupServer extends Thread {
 	 * @param oldNode Node to remove from membershiplist
 	 */
 	private void removeNode(Node oldNode) {
-		synchronized(Application.groupMembershipList)
+		synchronized(Application.getInstance().group.list)
 		{
-			Application.groupMembershipList.remove(oldNode);
+			Application.getInstance().group.list.remove(oldNode);
 		}
 		Application.LOGGER.info("RQ1: GroupServer - addNewNode() - Old node removed successfully: " + oldNode);
 		System.out.println("Everyone should remove: " + oldNode);
@@ -156,9 +156,9 @@ public class GroupServer extends Thread {
 		System.out.println("Sending current group list to new node: " + address.getHostAddress());
 		
 		// The new node doesn't have any members! Send current group list to new member. 
-		synchronized(Application.groupMembershipList)
+		synchronized(Application.getInstance().group.list)
 		{
-			for(Node node : Application.groupMembershipList)
+			for(Node node : Application.getInstance().group.list)
 			{
 				if(!FailureDetectorClient.isRandomFailure())
 				{
@@ -190,10 +190,10 @@ public class GroupServer extends Thread {
 	 */
 	private void addNewNode(Node newNode) {
 		String groupList;
-		synchronized(Application.groupMembershipList)
+		synchronized(Application.getInstance().group.list)
 		{
-			Application.groupMembershipList.add(newNode);
-			groupList = Application.groupMembershipList.toString();
+			Application.getInstance().group.list.add(newNode);
+			groupList = Application.getInstance().group.list.toString();
 		}
 		System.out.println("New Node added successfully: " + newNode.toString());
 		System.out.println("Updated Group list: " + groupList);

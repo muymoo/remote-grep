@@ -49,9 +49,8 @@ public class Application {
 	private static String[] servers = new String[] { LINUX_5 + ":" + TCP_PORT,
 			"130.126.112.146:4444", "130.126.112.117:4444" };
 
-	public static List<Node> groupMembershipList = Collections
-			.synchronizedList(new ArrayList<Node>());
-	private String hostaddress = "";
+	public GroupMembership group;
+	public static String hostaddress = "";
 
 	/**
 	 * Main server. The log location is where the server logs will be stored as
@@ -60,7 +59,31 @@ public class Application {
 	 * @param newLogLocation
 	 *            Location to store logs.
 	 */
-	private Application(String newLogLocation) {
+	private Application() {
+		this.grepTasks = new ArrayList<GrepTask>();
+		this.group = new GroupMembership();
+	}
+
+	/**
+	 * We are using a singleton pattern for our application.
+	 * 
+	 * @return - Grep application instance
+	 */
+	public static Application getInstance() {
+		if (instance == null) {
+			instance = new Application();
+		}
+		return instance;
+	}
+
+	/**
+	 * Configures/starts the failure detection threads and sets the intentional
+	 * message failure rate
+	 * 
+	 * @param messageFailureRate
+	 *            - a percentage represented as a double in the range [0,1]
+	 */
+	public void configure(String newLogLocation, double messageFailureRate) {
 		String hostname = "linux5";
 		try {
 			hostname = java.net.InetAddress.getLocalHost().getHostName();
@@ -86,29 +109,8 @@ public class Application {
 		logFileHandler.setLevel(Level.INFO);
 
 		LOGGER.addHandler(logFileHandler);
-		this.grepTasks = new ArrayList<GrepTask>();
-	}
-
-	/**
-	 * We are using a singleton pattern for our application.
-	 * 
-	 * @return - Grep application instance
-	 */
-	public static Application getInstance(String newLogLocation) {
-		if (instance == null) {
-			instance = new Application(newLogLocation);
-		}
-		return instance;
-	}
-
-	/**
-	 * Configures/starts the failure detection threads and sets the intentional
-	 * message failure rate
-	 * 
-	 * @param messageFailureRate
-	 *            - a percentage represented as a double in the range [0,1]
-	 */
-	public void configureFailureDetection(double messageFailureRate) {
+		
+		
 		if (messageFailureRate <= 0.0 || messageFailureRate > 1.0) {
 			FailureDetectorClient.messageFailureRate = 0.0;
 		} else {
@@ -138,12 +140,12 @@ public class Application {
 		}
 		// If this is the introducer node, start listening for incoming requests
 		if (hostaddress.equals(LINUX_5)) {
-			synchronized (groupMembershipList) {
+			synchronized (group.list) {
 
 				// Add Linux5 as the first member
 				Node newNode = new Node(System.currentTimeMillis(),
 						hostaddress, Integer.valueOf(UDP_PORT));
-				groupMembershipList.add(newNode);
+				group.list.add(newNode);
 
 				startGroupServer();
 				LOGGER.info("Application - run() - Listening for join requests.");
@@ -171,7 +173,7 @@ public class Application {
 				}
 				// Add node to group membership list
 				else if ("j".equals(input.trim())) {
-					if (!groupMembershipList.contains(new Node(System
+					if (!group.list.contains(new Node(System
 							.currentTimeMillis(), hostaddress, 4445))) {
 						joinGroup();
 					} else {
@@ -183,7 +185,7 @@ public class Application {
 				else if ("d".equals(input.trim())) {
 					addDefaultNodes();
 				} else if ("g".equals(input.trim())) {
-					System.out.println(groupMembershipList);
+					System.out.println(group.list);
 				}
 				// Run grep
 				else if ("q".equals(input.trim())) {
@@ -245,8 +247,8 @@ public class Application {
 	 * Present menu to the user
 	 */
 	private void promptUserForInput() {
-		synchronized (groupMembershipList) {
-			if (groupMembershipList.contains(new Node(System
+		synchronized (group.list) {
+			if (group.list.contains(new Node(System
 					.currentTimeMillis(), hostaddress, 1111))) {
 				System.out.println("(l) Leave group");
 			} else {
@@ -296,9 +298,9 @@ public class Application {
 			Node thisNode = new Node(111L, hostaddress, 1111);
 
 			System.out.println("Notify all nodes that I'm leaving.");
-			if (groupMembershipList.contains(thisNode)) {
+			if (group.list.contains(thisNode)) {
 				// Tell all nodes to remove this node from their lists
-				broadcast(groupMembershipList.get(groupMembershipList
+				broadcast(group.list.get(group.list
 						.indexOf(thisNode)), "R");
 			}
 		} catch (UnknownHostException e) {
@@ -307,7 +309,7 @@ public class Application {
 			e.printStackTrace();
 		}
 
-		groupMembershipList.clear();
+		group.list.clear();
 		System.out.println("Group membership list cleared on this node.");
 		Application.LOGGER
 				.info("RQ1: RemoteGrepApplicatoin - leaveGroup() - Left group.");
@@ -451,19 +453,29 @@ public class Application {
 	 *            - used to read in the new logs location
 	 */
 	public static void main(String[] args) {
+		Application app = null;
+		double messageFailureRate = 0.0;
 		if (args.length == 1) {
 			// TODO: check to see if the location exists
-			Application app = new Application(args[0]);
-			app.configureFailureDetection(0);
-			app.run();
+			app = new Application();
+			app.configure(args[0],messageFailureRate);
 		} else if (args.length == 2) {
-			Application app = new Application(args[0]);
-			app.configureFailureDetection(Double.parseDouble(args[1]));
-			app.run();
+			app = new Application();
+			messageFailureRate = Double.parseDouble(args[1]);
+			app.configure(args[0],messageFailureRate);
 		} else {
 			printUsage();
 			System.exit(-1);
 		}
-
+		
+		app.group = new GroupMembership();
+		try {
+			Application.hostaddress = InetAddress.getLocalHost().getHostAddress();
+		} catch (UnknownHostException e1) {
+			// TODO: add logic to add
+			e1.printStackTrace();
+		}
+		
+		app.run();
 	}
 }

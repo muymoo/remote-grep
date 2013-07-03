@@ -25,17 +25,10 @@ public class FailureDetectorServer {
 	protected static BlockingQueue<Node> heartbeatQueue;
 	private Thread producer;
 	private Thread consumer;
-	private String hostaddress = "";
 	protected DatagramSocket socket = null;
 	
 	public FailureDetectorServer()
-	{
-		try {
-			hostaddress = InetAddress.getLocalHost().getHostAddress();
-		} catch (UnknownHostException e1) {
-			e1.printStackTrace();
-		}
-		
+	{	
 		try {
 			socket = new DatagramSocket(Application.UDP_FD_PORT);
 		} catch (SocketException e1) {
@@ -113,9 +106,9 @@ public class FailureDetectorServer {
 				
 				// iterate over other group members to detect failures
 				long currTime = new Date().getTime();
-				synchronized(Application.groupMembershipList)
+				synchronized(Application.getInstance().group.list)
 				{				
-					Iterator<Node> i = Application.groupMembershipList.iterator(); // Must be in synchronized block
+					Iterator<Node> i = Application.getInstance().group.list.iterator(); // Must be in synchronized block
 				    while (i.hasNext())
 				    {
 				    	Node node = i.next();
@@ -139,7 +132,7 @@ public class FailureDetectorServer {
 						}
 						
 						// detect failures
-						if(!node.isSelf(hostaddress))
+						if(!node.isSelf(Application.hostaddress))
 						{
 							if(node.lastUpdatedTimestamp > 0)
 							{

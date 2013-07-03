@@ -88,12 +88,12 @@ public class FailureDetectorClient{
 					end = new Date().getTime();
 				}
 				
-				synchronized(Application.groupMembershipList)
+				synchronized(Application.getInstance().group.list)
 				{		
 					// send heartbeats to all other nodes
 					int nodesContacted = 0;
 
-					Iterator<Node> i = Application.groupMembershipList.iterator(); // Must be in synchronized block
+					Iterator<Node> i = Application.getInstance().group.list.iterator(); // Must be in synchronized block
 				    while (i.hasNext())
 				    {
 				    	Node node = i.next();
