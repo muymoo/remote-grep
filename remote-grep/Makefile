@@ -3,7 +3,7 @@
 # the main compilation target
 all:
 	mkdir -p bin/test
-	javac src/org/uiuc/cs/distributed/grep/Grep.java src/org/uiuc/cs/distributed/grep/Application.java src/org/uiuc/cs/distributed/grep/GrepTask.java src/org/uiuc/cs/distributed/grep/GrepServer.java src/org/uiuc/cs/distributed/grep/Node.java src/org/uiuc/cs/distributed/grep/GroupClient.java src/org/uiuc/cs/distributed/grep/GroupServer.java src/org/uiuc/cs/distributed/grep/FailureDetectorServer.java src/org/uiuc/cs/distributed/grep/FailureDetectorClient.java src/org/uiuc/cs/distributed/grep/GroupMembership.java -d bin
+	javac src/org/uiuc/cs/distributed/grep/Grep.java src/org/uiuc/cs/distributed/grep/Application.java src/org/uiuc/cs/distributed/grep/GrepTask.java src/org/uiuc/cs/distributed/grep/GrepServer.java src/org/uiuc/cs/distributed/grep/Node.java src/org/uiuc/cs/distributed/grep/GroupClient.java src/org/uiuc/cs/distributed/grep/GroupServer.java src/org/uiuc/cs/distributed/grep/FailureDetectorServer.java src/org/uiuc/cs/distributed/grep/FailureDetectorClient.java src/org/uiuc/cs/distributed/grep/GroupMembership.java src/org/uiuc/cs/distributed/grep/DistributedFileSystem.java -d bin
 	javac -cp 3p/jars/junit-4.11.jar:3p/jars/hamcrest-core-1.3.jar:bin test/org/uiuc/cs/distributed/grep/NodeTest.java test/org/uiuc/cs/distributed/grep/AllTests.java test/org/uiuc/cs/distributed/grep/ApplicationTest.java test/org/uiuc/cs/distributed/grep/util/TestLogs.java -d bin/test
 
 # the main driver for the program
