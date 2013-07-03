@@ -88,12 +88,12 @@ public class FailureDetectorClient{
 					end = new Date().getTime();
 				}
 				
-				synchronized(RemoteGrepApplication.groupMembershipList)
+				synchronized(Application.groupMembershipList)
 				{		
 					// send heartbeats to all other nodes
 					int nodesContacted = 0;
 
-					Iterator<Node> i = RemoteGrepApplication.groupMembershipList.iterator(); // Must be in synchronized block
+					Iterator<Node> i = Application.groupMembershipList.iterator(); // Must be in synchronized block
 				    while (i.hasNext())
 				    {
 				    	Node node = i.next();
@@ -116,7 +116,7 @@ public class FailureDetectorClient{
 						}
 					}
 					if(nodesContacted == 0) {
-						RemoteGrepApplication.LOGGER.info(new Date().getTime()+" FailureDetectorClient - run() - no nodes to send heartbeat to");
+						Application.LOGGER.info(new Date().getTime()+" FailureDetectorClient - run() - no nodes to send heartbeat to");
 					}
 				}
 
@@ -128,14 +128,14 @@ public class FailureDetectorClient{
     		{
 	    		// generate random number to determine whether or  not to drop the packet
 		    	if(data.getBytes("utf-8").length > 256) {
-		    		RemoteGrepApplication.LOGGER.info("FailureDetectorClient - sendData - string data is too long");
+		    		Application.LOGGER.info("FailureDetectorClient - sendData - string data is too long");
 		    		throw new IOException("string data is too long");
 		    	}
-		        DatagramPacket datagram = new DatagramPacket(data.getBytes("utf-8"), data.length(), target, RemoteGrepApplication.UDP_FD_PORT);
+		        DatagramPacket datagram = new DatagramPacket(data.getBytes("utf-8"), data.length(), target, Application.UDP_FD_PORT);
 		        socket.send(datagram);
-				RemoteGrepApplication.LOGGER.info(new Date().getTime() +" FailureDetectorClient - run() - Sending heartbeat.");
+				Application.LOGGER.info(new Date().getTime() +" FailureDetectorClient - run() - Sending heartbeat.");
     		} else {
-				RemoteGrepApplication.LOGGER.info(new Date().getTime() +" FailureDetectorClient - run() - heartbeat message dropped!");
+				Application.LOGGER.info(new Date().getTime() +" FailureDetectorClient - run() - heartbeat message dropped!");
     		}
 	    }
 	}

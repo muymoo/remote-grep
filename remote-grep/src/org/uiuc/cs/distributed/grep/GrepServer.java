@@ -25,7 +25,7 @@ import java.util.logging.SimpleFormatter;
 public class GrepServer extends Thread
 {
     private ServerSocket   serverSocket = null;
-    private int            serverPort   = RemoteGrepApplication.TCP_PORT;
+    private int            serverPort   = Application.TCP_PORT;
     private boolean        listening    = true;
     private boolean        foundPort;
 
@@ -68,15 +68,15 @@ public class GrepServer extends Thread
             }
             if ( !this.foundPort )
             {
-                RemoteGrepApplication.LOGGER.severe("GrepServer - run - Could not listen on port: " + serverPort);
+                Application.LOGGER.severe("GrepServer - run - Could not listen on port: " + serverPort);
                 System.exit(-1);
             }
-            RemoteGrepApplication.LOGGER.info("GrepServer - run - Server started on socket: " + serverPort);
+            Application.LOGGER.info("GrepServer - run - Server started on socket: " + serverPort);
 
             while (listening)
             {
                 Socket clientSocket = serverSocket.accept();
-                RemoteGrepApplication.LOGGER.info("GrepServer - run - accepted connection from: " + clientSocket.getInetAddress() + ":"
+                Application.LOGGER.info("GrepServer - run - accepted connection from: " + clientSocket.getInetAddress() + ":"
                         + clientSocket.getPort());
 
                 // Setup our input/output streams
@@ -89,7 +89,7 @@ public class GrepServer extends Thread
                 // Loop until grep doesn't return any more results
                 while ((clientInput = in.readLine()) != null)
                 {
-                    RemoteGrepApplication.LOGGER.info("GrepServer - run - clientInput: " + clientInput);
+                    Application.LOGGER.info("GrepServer - run - clientInput: " + clientInput);
                     if ( clientInput.equals("<QUIT>") )
                     {
                         listening = false;
@@ -97,7 +97,7 @@ public class GrepServer extends Thread
                         break;
                     }
                     clientOutput = grep.search(clientInput); // run grep
-                    RemoteGrepApplication.LOGGER.info("GrepServer - run - clientOutput: " + clientOutput);
+                    Application.LOGGER.info("GrepServer - run - clientOutput: " + clientOutput);
                     clientOutput += "<END>\n";
                     out.print(clientOutput); // Send results back to client
                     out.println("<END>");
@@ -110,11 +110,11 @@ public class GrepServer extends Thread
             }
 
             serverSocket.close();
-            RemoteGrepApplication.LOGGER.info("GrepServer - run - socket closed, shutting down server.");
+            Application.LOGGER.info("GrepServer - run - socket closed, shutting down server.");
         }
         catch (IOException e)
         {
-            RemoteGrepApplication.LOGGER.info("GrepServer - run - IOException: " + e.getMessage() + " stack trace: "
+            Application.LOGGER.info("GrepServer - run - IOException: " + e.getMessage() + " stack trace: "
                     + e.getStackTrace().toString());
         }
     }

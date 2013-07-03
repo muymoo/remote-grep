@@ -39,9 +39,9 @@ public class GroupServer extends Thread {
 	 */
 	public void run() {
 		try {
-			socket = new DatagramSocket(RemoteGrepApplication.UDP_PORT);
+			socket = new DatagramSocket(Application.UDP_PORT);
 		} catch (SocketException e1) {
-			RemoteGrepApplication.LOGGER.severe("GroupServer - run() - Socket is already in use: " + RemoteGrepApplication.UDP_PORT);
+			Application.LOGGER.severe("GroupServer - run() - Socket is already in use: " + Application.UDP_PORT);
 			return;
 		}
 		while (alive) {
@@ -56,12 +56,12 @@ public class GroupServer extends Thread {
 				String timestamp = new String (packet.getData(), 0, packet.getLength(), "UTF-8");
 				
 				// Add node to group list				
-				RemoteGrepApplication.LOGGER.info("RQ1: GroupServer - run() - Join request recieved");
+				Application.LOGGER.info("RQ1: GroupServer - run() - Join request recieved");
 				Node newNode = new Node(Long.parseLong(timestamp), packet.getAddress().getHostAddress(), packet.getPort());
 				
-				synchronized(RemoteGrepApplication.groupMembershipList)
+				synchronized(Application.groupMembershipList)
 				{
-					if(!RemoteGrepApplication.groupMembershipList.contains(newNode))
+					if(!Application.groupMembershipList.contains(newNode))
 					{
 						System.out.println("We have not seen this node before, let's add it.");
 						addNewNode(newNode);
@@ -69,7 +69,7 @@ public class GroupServer extends Thread {
 					else
 					{
 						System.out.println("This node is trying to rejoin, it must have crashed before.");
-						Node oldNode = RemoteGrepApplication.groupMembershipList.get(RemoteGrepApplication.groupMembershipList.indexOf(newNode));
+						Node oldNode = Application.groupMembershipList.get(Application.groupMembershipList.indexOf(newNode));
 						// If the newNode's time stamp is greater than the old one, add it to the list
 						if(newNode.compareTo(oldNode) > 0)
 						{
@@ -99,11 +99,11 @@ public class GroupServer extends Thread {
 	 * @param oldNode Node to remove from membershiplist
 	 */
 	private void removeNode(Node oldNode) {
-		synchronized(RemoteGrepApplication.groupMembershipList)
+		synchronized(Application.groupMembershipList)
 		{
-			RemoteGrepApplication.groupMembershipList.remove(oldNode);
+			Application.groupMembershipList.remove(oldNode);
 		}
-		RemoteGrepApplication.LOGGER.info("RQ1: GroupServer - addNewNode() - Old node removed successfully: " + oldNode);
+		Application.LOGGER.info("RQ1: GroupServer - addNewNode() - Old node removed successfully: " + oldNode);
 		System.out.println("Everyone should remove: " + oldNode);
 		
 		try {
@@ -134,11 +134,11 @@ public class GroupServer extends Thread {
 
 		if(!FailureDetectorClient.isRandomFailure())
 		{
-			RemoteGrepApplication.LOGGER.info("RQ1: GroupServer - broadcast() - Broadcasting updated to all nodes in UDP group.");
+			Application.LOGGER.info("RQ1: GroupServer - broadcast() - Broadcasting updated to all nodes in UDP group.");
 			System.out.println("Notifying group about membership change: " + nodeChangedMessage);
-			InetAddress group = InetAddress.getByName(RemoteGrepApplication.UDP_MC_GROUP);
+			InetAddress group = InetAddress.getByName(Application.UDP_MC_GROUP);
 			DatagramPacket groupListPacket = new DatagramPacket(
-					nodeChangedBuffer, nodeChangedBuffer.length, group, RemoteGrepApplication.UDP_MC_PORT);
+					nodeChangedBuffer, nodeChangedBuffer.length, group, Application.UDP_MC_PORT);
 			socket.send(groupListPacket);
 		}
 	}
@@ -156,16 +156,16 @@ public class GroupServer extends Thread {
 		System.out.println("Sending current group list to new node: " + address.getHostAddress());
 		
 		// The new node doesn't have any members! Send current group list to new member. 
-		synchronized(RemoteGrepApplication.groupMembershipList)
+		synchronized(Application.groupMembershipList)
 		{
-			for(Node node : RemoteGrepApplication.groupMembershipList)
+			for(Node node : Application.groupMembershipList)
 			{
 				if(!FailureDetectorClient.isRandomFailure())
 				{
 					addNodeMessage = "A:"+node.toString();
 					buf = addNodeMessage.getBytes();
 					DatagramPacket addNodePacket = new DatagramPacket(buf, buf.length, address,
-							RemoteGrepApplication.UDP_PORT);
+							Application.UDP_PORT);
 					System.out.println("Sending: " + addNodeMessage);
 					socket.send(addNodePacket);
 				}
@@ -178,7 +178,7 @@ public class GroupServer extends Thread {
 			String endMessage = "END";
 			buf = endMessage.getBytes();
 			DatagramPacket endPacket = new DatagramPacket(buf, buf.length, address,
-					RemoteGrepApplication.UDP_PORT);
+					Application.UDP_PORT);
 			socket.send(endPacket);
 		}
 	}
@@ -190,14 +190,14 @@ public class GroupServer extends Thread {
 	 */
 	private void addNewNode(Node newNode) {
 		String groupList;
-		synchronized(RemoteGrepApplication.groupMembershipList)
+		synchronized(Application.groupMembershipList)
 		{
-			RemoteGrepApplication.groupMembershipList.add(newNode);
-			groupList = RemoteGrepApplication.groupMembershipList.toString();
+			Application.groupMembershipList.add(newNode);
+			groupList = Application.groupMembershipList.toString();
 		}
 		System.out.println("New Node added successfully: " + newNode.toString());
 		System.out.println("Updated Group list: " + groupList);
-		RemoteGrepApplication.LOGGER.info("RQ1: GroupServer - addNewNode() - New node added successfully: " + newNode);
+		Application.LOGGER.info("RQ1: GroupServer - addNewNode() - New node added successfully: " + newNode);
 		
 		try {
 			sendGroupList(newNode);

@@ -16,7 +16,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(Suite.class)
 @SuiteClasses(
 {
-        NodeTest.class, RemoteGrepApplicationTest.class
+        NodeTest.class, ApplicationTest.class
 })
 public class AllTests
 {

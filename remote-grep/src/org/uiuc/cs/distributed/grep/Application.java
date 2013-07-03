@@ -26,7 +26,7 @@ import java.util.logging.SimpleFormatter;
  * @author matt
  * @author evan
  */
-public class RemoteGrepApplication {
+public class Application {
 	public static String logLocation = "";
 	public static final int TCP_PORT = 4444;
 	public static final int UDP_PORT = 4445;
@@ -37,7 +37,7 @@ public class RemoteGrepApplication {
 	public static Logger LOGGER;
 
 	private static Handler logFileHandler;
-	private static RemoteGrepApplication instance = null;
+	private static Application instance = null;
 	private GrepServer grepServer;
 	private GroupServer groupServer;
 	private static GroupClient groupClient;
@@ -60,7 +60,7 @@ public class RemoteGrepApplication {
 	 * @param newLogLocation
 	 *            Location to store logs.
 	 */
-	private RemoteGrepApplication(String newLogLocation) {
+	private Application(String newLogLocation) {
 		String hostname = "linux5";
 		try {
 			hostname = java.net.InetAddress.getLocalHost().getHostName();
@@ -70,7 +70,7 @@ public class RemoteGrepApplication {
 		this.logLocation = newLogLocation;
 
 		String logFileLocation = this.logLocation + File.separator + "logs"
-				+ File.separator + "remotegrepapplication."
+				+ File.separator + "Application."
 				+ hostname.charAt(5) + ".log";
 
 		try {
@@ -80,7 +80,7 @@ public class RemoteGrepApplication {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		LOGGER = Logger.getLogger("RemoteGrepApplication");
+		LOGGER = Logger.getLogger("Application");
 		LOGGER.setUseParentHandlers(false);
 		logFileHandler.setFormatter(new SimpleFormatter());
 		logFileHandler.setLevel(Level.INFO);
@@ -94,9 +94,9 @@ public class RemoteGrepApplication {
 	 * 
 	 * @return - Grep application instance
 	 */
-	public static RemoteGrepApplication getInstance(String newLogLocation) {
+	public static Application getInstance(String newLogLocation) {
 		if (instance == null) {
-			instance = new RemoteGrepApplication(newLogLocation);
+			instance = new Application(newLogLocation);
 		}
 		return instance;
 	}
@@ -131,10 +131,10 @@ public class RemoteGrepApplication {
 		try {
 			hostaddress = InetAddress.getLocalHost().getHostAddress();
 
-			System.out.println("RemoteGrepApplication - Server started on: "
+			System.out.println("Application - Server started on: "
 					+ hostaddress + ":" + grepServer.getPort());
 		} catch (UnknownHostException e1) {
-			LOGGER.warning("RemoteGrepApplication - run() - failed to identify host");
+			LOGGER.warning("Application - run() - failed to identify host");
 		}
 		// If this is the introducer node, start listening for incoming requests
 		if (hostaddress.equals(LINUX_5)) {
@@ -146,7 +146,7 @@ public class RemoteGrepApplication {
 				groupMembershipList.add(newNode);
 
 				startGroupServer();
-				LOGGER.info("RemoteGrepApplication - run() - Listening for join requests.");
+				LOGGER.info("Application - run() - Listening for join requests.");
 				System.out
 						.println("Group Server started. Listening for join requests.");
 			}
@@ -226,18 +226,18 @@ public class RemoteGrepApplication {
 					break;
 				}
 			} catch (IOException e) {
-				LOGGER.warning("RemoteGrepApplication - run() - failed to readline from the input");
+				LOGGER.warning("Application - run() - failed to readline from the input");
 			}
 		}
 		try {
 			bufferedReader.close();
 		} catch (IOException e) {
-			LOGGER.warning("RemoteGrepApplication - run() - failed to close bufferedreader");
+			LOGGER.warning("Application - run() - failed to close bufferedreader");
 		}
 		try {
 			inputStreamReader.close();
 		} catch (IOException e) {
-			LOGGER.warning("RemoteGrepApplication - run() - failed to close inputstreamreader");
+			LOGGER.warning("Application - run() - failed to close inputstreamreader");
 		}
 	}
 
@@ -309,7 +309,7 @@ public class RemoteGrepApplication {
 
 		groupMembershipList.clear();
 		System.out.println("Group membership list cleared on this node.");
-		RemoteGrepApplication.LOGGER
+		Application.LOGGER
 				.info("RQ1: RemoteGrepApplicatoin - leaveGroup() - Left group.");
 	}
 
@@ -397,19 +397,19 @@ public class RemoteGrepApplication {
 			taskToStopServer.join();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
-			LOGGER.warning("RemoteGrepApplication - stopGrepServer - interrupted while joining task thread.");
+			LOGGER.warning("Application - stopGrepServer - interrupted while joining task thread.");
 		}
 		try {
 			grepServer.join();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
-			LOGGER.warning("RemoteGrepApplication - stopGrepServer - interrupted while joining processing threads.");
+			LOGGER.warning("Application - stopGrepServer - interrupted while joining processing threads.");
 		}
 	}
 
 	public static void printUsage() {
 		System.out
-				.println("USAGE: java -cp bin org.uiuc.cs.distributed.grep.RemoteGrepApplication <LOG_LOCATION>");
+				.println("USAGE: java -cp bin org.uiuc.cs.distributed.grep.Application <LOG_LOCATION>");
 		System.out.println("\n");
 	}
 
@@ -429,17 +429,17 @@ public class RemoteGrepApplication {
 		// Notify all nodes of group list change
 		byte[] nodeChangedBuffer = new byte[256];
 		DatagramSocket socket = new DatagramSocket(
-				RemoteGrepApplication.UDP_MC_PORT);
+				Application.UDP_MC_PORT);
 		String nodeChangedMessage = action + ":" + node;
 		nodeChangedBuffer = nodeChangedMessage.getBytes();
 
 		System.out.println("Notifying group about membership change: "
 				+ nodeChangedMessage);
 		InetAddress group = InetAddress
-				.getByName(RemoteGrepApplication.UDP_MC_GROUP);
+				.getByName(Application.UDP_MC_GROUP);
 		DatagramPacket groupListPacket = new DatagramPacket(nodeChangedBuffer,
 				nodeChangedBuffer.length, group,
-				RemoteGrepApplication.UDP_MC_PORT);
+				Application.UDP_MC_PORT);
 		socket.send(groupListPacket);
 		socket.close();
 	}
@@ -453,11 +453,11 @@ public class RemoteGrepApplication {
 	public static void main(String[] args) {
 		if (args.length == 1) {
 			// TODO: check to see if the location exists
-			RemoteGrepApplication app = new RemoteGrepApplication(args[0]);
+			Application app = new Application(args[0]);
 			app.configureFailureDetection(0);
 			app.run();
 		} else if (args.length == 2) {
-			RemoteGrepApplication app = new RemoteGrepApplication(args[0]);
+			Application app = new Application(args[0]);
 			app.configureFailureDetection(Double.parseDouble(args[1]));
 			app.run();
 		} else {

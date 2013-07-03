@@ -37,12 +37,12 @@ public class FailureDetectorServer {
 		}
 		
 		try {
-			socket = new DatagramSocket(RemoteGrepApplication.UDP_FD_PORT);
+			socket = new DatagramSocket(Application.UDP_FD_PORT);
 		} catch (SocketException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
-			RemoteGrepApplication.LOGGER.info("FailureDetectorServer - producer.run() - couldn't start server on port: "+
-					RemoteGrepApplication.UDP_FD_PORT);
+			Application.LOGGER.info("FailureDetectorServer - producer.run() - couldn't start server on port: "+
+					Application.UDP_FD_PORT);
 		}
 		
 		heartbeatQueue = new ArrayBlockingQueue<Node>(6);
@@ -83,7 +83,7 @@ public class FailureDetectorServer {
 	{
 		@Override
 		public void run() {
-			RemoteGrepApplication.LOGGER.info("FailureDetectorServer - consumer.run() - starting consumer");
+			Application.LOGGER.info("FailureDetectorServer - consumer.run() - starting consumer");
 			while(!Thread.currentThread().isInterrupted())
 			{
 				// sleep 2.5 seconds
@@ -113,9 +113,9 @@ public class FailureDetectorServer {
 				
 				// iterate over other group members to detect failures
 				long currTime = new Date().getTime();
-				synchronized(RemoteGrepApplication.groupMembershipList)
+				synchronized(Application.groupMembershipList)
 				{				
-					Iterator<Node> i = RemoteGrepApplication.groupMembershipList.iterator(); // Must be in synchronized block
+					Iterator<Node> i = Application.groupMembershipList.iterator(); // Must be in synchronized block
 				    while (i.hasNext())
 				    {
 				    	Node node = i.next();
@@ -135,7 +135,7 @@ public class FailureDetectorServer {
 						}
 						if(equalsComparisons != heartbeatsToProcess.size())
 						{
-							RemoteGrepApplication.LOGGER.warning("FailureDetectorServer - consumer.run() - some of the heartbeats in the queue didn't match the membership list");
+							Application.LOGGER.warning("FailureDetectorServer - consumer.run() - some of the heartbeats in the queue didn't match the membership list");
 						}
 						
 						// detect failures
@@ -143,14 +143,14 @@ public class FailureDetectorServer {
 						{
 							if(node.lastUpdatedTimestamp > 0)
 							{
-								if((node.lastUpdatedTimestamp+RemoteGrepApplication.timeBoundedFailureInMilli) <
+								if((node.lastUpdatedTimestamp+Application.timeBoundedFailureInMilli) <
 										currTime)
 								{
-									RemoteGrepApplication.LOGGER.info(new Date().getTime()+" RQ1: FailureDetectorServer - run() - failure detected at node: "+ node.verboseToString());
+									Application.LOGGER.info(new Date().getTime()+" RQ1: FailureDetectorServer - run() - failure detected at node: "+ node.verboseToString());
 	
 									System.out.println(new Date().getTime()+" failure detected at node: "+node.verboseToString());
 									// remove from list
-									RemoteGrepApplication.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
+									Application.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
 									System.out.println("Removing node: "+node.toString());
 	
 									// Remove node from list (must use iterator since that's how we're looping)
@@ -189,9 +189,9 @@ public class FailureDetectorServer {
 			nodeChangedBuffer = nodeChangedMessage.getBytes();
 
 			System.out.println("Notifying group about membership change: " + nodeChangedMessage);
-			InetAddress group = InetAddress.getByName(RemoteGrepApplication.UDP_MC_GROUP);
+			InetAddress group = InetAddress.getByName(Application.UDP_MC_GROUP);
 			DatagramPacket groupListPacket = new DatagramPacket(
-					nodeChangedBuffer, nodeChangedBuffer.length, group, RemoteGrepApplication.UDP_MC_PORT);
+					nodeChangedBuffer, nodeChangedBuffer.length, group, Application.UDP_MC_PORT);
 			socket.send(groupListPacket);
 		}
 	}
@@ -212,7 +212,7 @@ public class FailureDetectorServer {
 		 */
 		@Override
 		public void run() {
-			RemoteGrepApplication.LOGGER.info("FailureDetectorServer - producer.run() - starting producer");
+			Application.LOGGER.info("FailureDetectorServer - producer.run() - starting producer");
 			
 			while(!Thread.currentThread().isInterrupted())
 			{
@@ -227,7 +227,7 @@ public class FailureDetectorServer {
 				
 		    	try {
 					String data = new String(packet.getData(),0, packet.getLength(), "UTF-8");
-					RemoteGrepApplication.LOGGER.info("FailureDetectionServer - producer.run() - received packet data: "+data);
+					Application.LOGGER.info("FailureDetectorServer - producer.run() - received packet data: "+data);
 					
 					
 					if(data.equals("HEARTBEAT"))
@@ -236,7 +236,7 @@ public class FailureDetectorServer {
 						{
 							Node heartbeatNode = new Node(System.currentTimeMillis(),packet.getAddress().toString().replace("/",""),packet.getPort(),System.currentTimeMillis());
 							heartbeatQueue.add(heartbeatNode);
-							RemoteGrepApplication.LOGGER.info("FailureDetectorServer - producer.run() - added heartbeat node: "+heartbeatNode.toString());
+							Application.LOGGER.info("FailureDetectorServer - producer.run() - added heartbeat node: "+heartbeatNode.toString());
 						}
 					}
 				} catch (UnsupportedEncodingException e) {
