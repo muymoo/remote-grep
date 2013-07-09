@@ -9,8 +9,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -32,6 +30,7 @@ public class Application {
 	public static final int UDP_PORT = 4445;
 	public static final int UDP_MC_PORT = 4446;
 	public static final int UDP_FD_PORT = 4447; // port for failure detection
+	public static final int TCP_SDFS_PORT = 4448; // SDFS put, get, delete
 	public static final String UDP_MC_GROUP = "228.5.6.7";
 	public static final int timeBoundedFailureInMilli = 5000;
 	public static Logger LOGGER;
@@ -40,6 +39,7 @@ public class Application {
 	private static Application instance = null;
 	private GrepServer grepServer;
 	private GroupServer groupServer;
+	private DistributedFileSystemListener sdfsListener;
 	private static GroupClient groupClient;
 	private FailureDetectorServer failureDetectorServer;
 	private FailureDetectorClient failureDetectorClient;
@@ -52,6 +52,8 @@ public class Application {
 	public GroupMembership group;
 	public static String hostaddress = "";
 
+	private DistributedFileSystem sdfs;
+	
 	/**
 	 * Main server. The log location is where the server logs will be stored as
 	 * well as where grep will search.
@@ -62,6 +64,7 @@ public class Application {
 	private Application() {
 		this.grepTasks = new ArrayList<GrepTask>();
 		this.group = new GroupMembership();
+		this.sdfs = new DistributedFileSystem();
 	}
 
 	/**
@@ -120,6 +123,7 @@ public class Application {
 		this.failureDetectorClient = new FailureDetectorClient();
 		this.grepServer = new GrepServer();
 		this.groupServer = new GroupServer();
+		this.sdfsListener = new DistributedFileSystemListener();
 	}
 
 	/**
@@ -129,7 +133,8 @@ public class Application {
 	 */
 	public void run() {
 		startGrepServer(); // listen for incoming grep requests.
-
+		startDistributedFileSystemListener(); // listen for incoming sdfs put, get, deletes
+		
 		try {
 			hostaddress = InetAddress.getLocalHost().getHostAddress();
 
@@ -227,6 +232,17 @@ public class Application {
 					stopGrepServer();
 					break;
 				}
+				// Put a file on the sdfs
+				else if("put".equals(input.startsWith("put ")))
+				{
+					String[] putCommand = input.split(" ");
+					if(putCommand.length != 3)
+					{
+						System.out.println("Usage: put <local_file_name> <sdfs_file_name>");
+						break;
+					}
+					sdfs.put(putCommand[1], putCommand[3]);
+				}
 			} catch (IOException e) {
 				LOGGER.warning("Application - run() - failed to readline from the input");
 			}
@@ -241,6 +257,10 @@ public class Application {
 		} catch (IOException e) {
 			LOGGER.warning("Application - run() - failed to close inputstreamreader");
 		}
+	}
+
+	private void startDistributedFileSystemListener() {
+		sdfsListener.start();
 	}
 
 	/**
@@ -259,6 +279,7 @@ public class Application {
 		System.out.println("(a) Add node ((d) adds default nodes)");
 		System.out.println("(q) Query logs");
 		System.out.println("(e) Exit");
+		System.out.println("(put <local_file_name> <sdfs_file_name>)");
 	}
 
 	/**

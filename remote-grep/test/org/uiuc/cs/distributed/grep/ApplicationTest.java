@@ -43,7 +43,7 @@ public class ApplicationTest
     @BeforeClass
     public static void initialize()
     {
-        application = Application.getInstance("/tmp/cs425_momontbowling/");
+        application = Application.getInstance();
         application.startGrepServer();
 
         System.setOut(new PrintStream(outContent));
