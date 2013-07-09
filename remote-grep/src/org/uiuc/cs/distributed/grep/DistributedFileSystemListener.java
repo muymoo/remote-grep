@@ -63,7 +63,7 @@ public class DistributedFileSystemListener extends Thread {
 				byte[] buffer = new byte[65536];
 				int number;
 				InputStream socketStream = clientSocket.getInputStream();
-				File f = new File("/tmp/output.dat");
+				File f = new File("/tmp/momont2/output.dat");
 				OutputStream fileStream = new FileOutputStream(f);
 				
 				// Read file from sender

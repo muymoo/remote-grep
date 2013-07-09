@@ -9,20 +9,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DistributedFileSystem {
-
-	Application app;
 	Map<String, HashMap<Node, String>> fileMap;
 	
 	public DistributedFileSystem()
 	{
-		app = Application.getInstance();
 		fileMap = new HashMap<String, HashMap<Node,String>>();
 	}
 	
 	public void put(String localFileName, String remoteFileName) 
 	{
 		// TODO: Get hashed/random node to store node on
-		Node remoteNodeToStoreFile = app.group.list.get(1);
+		Node remoteNodeToStoreFile = Application.getInstance().group.list.get(1);
 		
 		String remoteNodesLocalFilePath = sendFileToNode(localFileName, remoteNodeToStoreFile);
 		
@@ -45,12 +42,12 @@ public class DistributedFileSystem {
         FileInputStream fileInputStream = null;
 		
         try {
-			clientSocket = new Socket(remoteNodeToStoreFile.getIP(),
-					remoteNodeToStoreFile.getPort());
+			clientSocket = new Socket("130.126.112.117",
+					Application.TCP_SDFS_PORT);
 
 			// Setup our input and output streams
 			socketOutputStream = clientSocket.getOutputStream();
-			fileInputStream = new FileInputStream("test.txt");
+			fileInputStream = new FileInputStream("/tmp/momont2/test.txt");
 
 		}
 		catch (UnknownHostException e)
