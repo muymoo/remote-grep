@@ -168,7 +168,7 @@ public class Application {
 
 			try {
 				input = bufferedReader.readLine();
-
+				System.out.println(input);
 				// Add a node to grep
 				if ("a".equals(input.trim())) {
 					System.out
@@ -233,15 +233,16 @@ public class Application {
 					break;
 				}
 				// Put a file on the sdfs
-				else if("put".equals(input.startsWith("put ")))
+				else if(input.startsWith("put "))
 				{
+					System.out.println("Input starts with put, send file.");
 					String[] putCommand = input.split(" ");
 					if(putCommand.length != 3)
 					{
 						System.out.println("Usage: put <local_file_name> <sdfs_file_name>");
 						break;
 					}
-					sdfs.put(putCommand[1], putCommand[3]);
+					sdfs.put(putCommand[1], putCommand[2]);
 				}
 			} catch (IOException e) {
 				LOGGER.warning("Application - run() - failed to readline from the input");

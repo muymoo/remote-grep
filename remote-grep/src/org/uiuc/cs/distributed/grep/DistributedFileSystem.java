@@ -34,7 +34,6 @@ public class DistributedFileSystem {
 	private String sendFileToNode(String localFileName,
 			Node remoteNodeToStoreFile) {
 		// Read in file
-		//
 		byte[] buffer = new byte[65536];
 		int number;
         Socket clientSocket = null;
@@ -42,9 +41,10 @@ public class DistributedFileSystem {
         FileInputStream fileInputStream = null;
 		
         try {
+        	System.out.println("Sending " + localFileName + " to " + remoteNodeToStoreFile);
 			clientSocket = new Socket("130.126.112.117",
 					Application.TCP_SDFS_PORT);
-
+			System.out.println("Connected to socket: " + clientSocket);
 			// Setup our input and output streams
 			socketOutputStream = clientSocket.getOutputStream();
 			fileInputStream = new FileInputStream("/tmp/momont2/test.txt");
@@ -62,9 +62,11 @@ public class DistributedFileSystem {
         }
 		
 		try {
+			System.out.println("reading in file: " + fileInputStream);
 			while ((number = fileInputStream.read(buffer)) != -1) {
 				try {
 					socketOutputStream.write(buffer, 0, number);
+					System.out.println("write: " + buffer.toString());
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

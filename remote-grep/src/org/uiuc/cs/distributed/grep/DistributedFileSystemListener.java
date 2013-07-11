@@ -55,10 +55,11 @@ public class DistributedFileSystemListener extends Thread {
 
             while (listening)
             {
+            	System.out.println("Listening...");
                 Socket clientSocket = serverSocket.accept();
                 Application.LOGGER.info("SDFSListener - run - accepted connection from: " + clientSocket.getInetAddress() + ":"
 								+ clientSocket.getPort());
-
+                System.out.println("Started file receive.");
 				// Setup our input/output streams
 				byte[] buffer = new byte[65536];
 				int number;
