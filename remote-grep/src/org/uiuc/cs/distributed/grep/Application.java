@@ -475,22 +475,22 @@ public class Application {
 	 *            - used to read in the new logs location
 	 */
 	public static void main(String[] args) {
-		Application app = null;
+		instance = null;
 		double messageFailureRate = 0.0;
 		if (args.length == 1) {
 			// TODO: check to see if the location exists
-			app = new Application();
-			app.configure(args[0],messageFailureRate);
+			instance = new Application();
+			instance.configure(args[0],messageFailureRate);
 		} else if (args.length == 2) {
-			app = new Application();
+			instance = new Application();
 			messageFailureRate = Double.parseDouble(args[1]);
-			app.configure(args[0],messageFailureRate);
+			instance.configure(args[0],messageFailureRate);
 		} else {
 			printUsage();
 			System.exit(-1);
 		}
 		
-		app.group = new GroupMembership();
+		instance.group = new GroupMembership();
 		try {
 			Application.hostaddress = InetAddress.getLocalHost().getHostAddress();
 		} catch (UnknownHostException e1) {
@@ -498,6 +498,6 @@ public class Application {
 			e1.printStackTrace();
 		}
 		
-		app.run();
+		instance.run();
 	}
 }
