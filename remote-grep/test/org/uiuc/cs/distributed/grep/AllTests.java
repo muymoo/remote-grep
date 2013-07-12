@@ -16,7 +16,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(Suite.class)
 @SuiteClasses(
 {
-        NodeTest.class, ApplicationTest.class
+        NodeTest.class, GroupMembershipTest.class, ApplicationTest.class
 })
 public class AllTests
 {

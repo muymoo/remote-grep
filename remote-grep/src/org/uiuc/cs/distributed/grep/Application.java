@@ -63,7 +63,7 @@ public class Application {
 	 */
 	private Application() {
 		this.grepTasks = new ArrayList<GrepTask>();
-		this.group = new GroupMembership();
+		this.group = new GroupMembership(Application.hostaddress);
 		this.sdfs = new DistributedFileSystem();
 	}
 
@@ -489,14 +489,15 @@ public class Application {
 			printUsage();
 			System.exit(-1);
 		}
-		
-		instance.group = new GroupMembership();
 		try {
 			Application.hostaddress = InetAddress.getLocalHost().getHostAddress();
 		} catch (UnknownHostException e1) {
 			// TODO: add logic to add
 			e1.printStackTrace();
 		}
+		
+		instance.group = new GroupMembership(Application.hostaddress);
+
 		
 		instance.run();
 	}
