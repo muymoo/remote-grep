@@ -85,16 +85,14 @@ public class GroupClient extends Thread {
 
 					if(action != null && updatedNode != null) 
 					{
-						synchronized(Application.getInstance().group.list)
+						synchronized(Application.getInstance().group)
 						{
 							if (action.equals("A")) {
 								Application.LOGGER.info("RQ1: GroupClient - run() - Adding node " + updatedNode + " to list.");
-								Application.getInstance().group.list
-										.add(updatedNode);
+								Application.getInstance().group.add(updatedNode);
 							} else if (action.equals("R")) {
 								Application.LOGGER.info("RQ1: GroupClient - run() - Removing node " + updatedNode + " from list.");
-								Application.getInstance().group.list
-										.remove(updatedNode);
+								Application.getInstance().group.remove(updatedNode);
 							}
 							
 							Application.LOGGER.info("GroupClient - run() - Updated membership list: " + Application.getInstance().group.list);
@@ -195,11 +193,11 @@ public class GroupClient extends Thread {
 					addGroupMemberPacket.getData(), 0,
 					addGroupMemberPacket.getLength());
 
-			synchronized(Application.getInstance().group.list)
+			synchronized(Application.getInstance().group)
 			{
 				if (addGroupMemberMessage.equalsIgnoreCase("END")) {
 					System.out.println("Recieved updated group list: "
-							+ Application.getInstance().group.list);
+							+ Application.getInstance().group.toString());
 					receivingGroupList = false;
 					break;
 				}
@@ -207,9 +205,9 @@ public class GroupClient extends Thread {
 
 
 			Node nodeToAdd = parseNodeFromMessage(addGroupMemberMessage);
-			synchronized(Application.getInstance().group.list)
+			synchronized(Application.getInstance().group)
 			{
-				Application.getInstance().group.list.add(nodeToAdd);
+				Application.getInstance().group.add(nodeToAdd);
 			}
 		}
 
@@ -224,7 +222,7 @@ public class GroupClient extends Thread {
 	 * @return Node from message
 	 */
 	private Node parseNodeFromMessage(String addGroupMemberMessage) {
-		System.out.println("Parsing message: " + addGroupMemberMessage);
+		Application.LOGGER.info("Parsing message: " + addGroupMemberMessage);
 		String[] parts = addGroupMemberMessage.split(":");
 		if(parts.length != 4)
 		{

@@ -134,4 +134,24 @@ public class GroupMembership {
 			this.selfIndex = getSelfIndex();
 		}
 	}
+	
+	public String toString()
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append("[");
+		for(int i=0;i<this.list.size();i++)
+		{
+			if(i==this.selfIndex)
+			{
+				sb.append("(self)");
+			}
+			sb.append(this.list.get(i).toString());
+			if(i!=(this.list.size()-1))
+			{
+				sb.append(",");
+			}
+		}
+		sb.append("]");
+		return sb.toString();
+	}
 }

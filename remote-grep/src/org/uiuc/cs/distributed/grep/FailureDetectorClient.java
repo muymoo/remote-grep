@@ -92,29 +92,28 @@ public class FailureDetectorClient{
 				{		
 					// send heartbeats to all other nodes
 					int nodesContacted = 0;
-
-					Iterator<Node> i = Application.getInstance().group.list.iterator(); // Must be in synchronized block
-				    while (i.hasNext())
-				    {
-				    	Node node = i.next();
-						if(!node.isSelf(hostaddress))
-						{
-							nodesContacted++;				
-							
-							InetAddress target = null;
-							try {
-								target = InetAddress.getByName(node.getIP());
-							} catch (UnknownHostException e) {
-								e.printStackTrace();
-							}
-							
-							try {
-								sendData(target,"HEARTBEAT");
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
+					
+					Node node = Application.getInstance().group.getHeartbeatSendNode();
+					
+					if(node != null)
+					{
+						nodesContacted++;				
+						
+						InetAddress target = null;
+						try {
+							target = InetAddress.getByName(node.getIP());
+						} catch (UnknownHostException e) {
+							e.printStackTrace();
+						}
+						
+						try {
+							System.out.println("sending heartbeat to: "+node.getIP());
+							sendData(target,"HEARTBEAT");
+						} catch (IOException e) {
+							e.printStackTrace();
 						}
 					}
+
 					if(nodesContacted == 0) {
 						Application.LOGGER.info(new Date().getTime()+" FailureDetectorClient - run() - no nodes to send heartbeat to");
 					}

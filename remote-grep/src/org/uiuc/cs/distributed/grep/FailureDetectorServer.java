@@ -108,11 +108,10 @@ public class FailureDetectorServer {
 				long currTime = new Date().getTime();
 				synchronized(Application.getInstance().group.list)
 				{				
-					Iterator<Node> i = Application.getInstance().group.list.iterator(); // Must be in synchronized block
-				    while (i.hasNext())
-				    {
-				    	Node node = i.next();
-				    	
+					Node node = Application.getInstance().group.getHeartbeatReceiveNode();
+					
+					if(node != null)
+					{
 						// process heartbeat queue updates
 						int equalsComparisons = 0;
 						for(Node updateNode : heartbeatsToProcess)
@@ -132,31 +131,28 @@ public class FailureDetectorServer {
 						}
 						
 						// detect failures
-						if(!node.isSelf(Application.hostaddress))
+						if(node.lastUpdatedTimestamp > 0)
 						{
-							if(node.lastUpdatedTimestamp > 0)
+							if((node.lastUpdatedTimestamp+Application.timeBoundedFailureInMilli) <
+									currTime)
 							{
-								if((node.lastUpdatedTimestamp+Application.timeBoundedFailureInMilli) <
-										currTime)
-								{
-									Application.LOGGER.info(new Date().getTime()+" RQ1: FailureDetectorServer - run() - failure detected at node: "+ node.verboseToString());
-	
-									System.out.println(new Date().getTime()+" failure detected at node: "+node.verboseToString());
-									// remove from list
-									Application.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
-									System.out.println("Removing node: "+node.toString());
-	
-									// Remove node from list (must use iterator since that's how we're looping)
-									i.remove();
-									
-									try {
-										// Notify others that node has been removed.
-										broadcast(node, "R");
-									} catch (UnknownHostException e) {
-										e.printStackTrace();
-									} catch (IOException e) {
-										e.printStackTrace();
-									}
+								Application.LOGGER.info(new Date().getTime()+" RQ1: FailureDetectorServer - run() - failure detected at node: "+ node.verboseToString());
+
+								System.out.println(new Date().getTime()+" failure detected at node: "+node.verboseToString());
+								// remove from list
+								Application.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
+								System.out.println("Removing node: "+node.toString());
+
+								// Remove node from list (must use iterator since that's how we're looping)
+								Application.getInstance().group.remove(node);
+								
+								try {
+									// Notify others that node has been removed.
+									broadcast(node, "R");
+								} catch (UnknownHostException e) {
+									e.printStackTrace();
+								} catch (IOException e) {
+									e.printStackTrace();
 								}
 							}
 						}
@@ -229,7 +225,7 @@ public class FailureDetectorServer {
 						{
 							Node heartbeatNode = new Node(System.currentTimeMillis(),packet.getAddress().toString().replace("/",""),packet.getPort(),System.currentTimeMillis());
 							heartbeatQueue.add(heartbeatNode);
-							Application.LOGGER.info("FailureDetectorServer - producer.run() - added heartbeat node: "+heartbeatNode.toString());
+							Application.LOGGER.info("FailureDetectorServer - producer.run() - received heartbeat from node: "+heartbeatNode.getIP());
 						}
 					}
 				} catch (UnsupportedEncodingException e) {

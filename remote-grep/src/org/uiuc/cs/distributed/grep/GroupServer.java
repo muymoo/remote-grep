@@ -71,7 +71,7 @@ public class GroupServer extends Thread {
 						System.out.println("This node is trying to rejoin, it must have crashed before.");
 						Node oldNode = Application.getInstance().group.list.get(Application.getInstance().group.list.indexOf(newNode));
 						// If the newNode's time stamp is greater than the old one, add it to the list
-						if(newNode.compareTo(oldNode) > 0)
+						if(newNode.timestampCompareTo(oldNode) > 0)
 						{
 							// Replace old node with new node otherwise, ignore the new node, it must have been stuck in network land
 							removeNode(oldNode);
@@ -99,11 +99,11 @@ public class GroupServer extends Thread {
 	 * @param oldNode Node to remove from membershiplist
 	 */
 	private void removeNode(Node oldNode) {
-		synchronized(Application.getInstance().group.list)
+		synchronized(Application.getInstance().group)
 		{
-			Application.getInstance().group.list.remove(oldNode);
+			Application.getInstance().group.remove(oldNode);
 		}
-		Application.LOGGER.info("RQ1: GroupServer - addNewNode() - Old node removed successfully: " + oldNode);
+		Application.LOGGER.info("RQ1: GroupServer - removeNode() - Old node removed successfully: " + oldNode);
 		System.out.println("Everyone should remove: " + oldNode);
 		
 		try {
@@ -190,10 +190,10 @@ public class GroupServer extends Thread {
 	 */
 	private void addNewNode(Node newNode) {
 		String groupList;
-		synchronized(Application.getInstance().group.list)
+		synchronized(Application.getInstance().group)
 		{
-			Application.getInstance().group.list.add(newNode);
-			groupList = Application.getInstance().group.list.toString();
+			Application.getInstance().group.add(newNode);
+			groupList = Application.getInstance().group.toString();
 		}
 		System.out.println("New Node added successfully: " + newNode.toString());
 		System.out.println("Updated Group list: " + groupList);

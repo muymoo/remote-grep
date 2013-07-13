@@ -85,6 +85,17 @@ public class Node implements Comparable<Node>
     	return 0;
     }
     
+    /**
+     * compare nodes based on the timestamp they were added
+     * 
+     * @param otherNode
+     * @return
+     */
+    public int timestampCompareTo(Node otherNode)
+    {
+    	return Long.valueOf(this.timestamp).compareTo(Long.valueOf(otherNode.getTimestamp()));
+    }
+    
     public int lastUpdatedCompareTo(Node otherNode)
     {
     	return Long.valueOf(this.lastUpdatedTimestamp).compareTo(Long.valueOf(otherNode.lastUpdatedTimestamp));
@@ -145,16 +156,6 @@ public class Node implements Comparable<Node>
     		}
     	}
     	return true;
-    }
-    
-    public boolean isSelf(String selfIpAddress)
-    {
-    	if(this.ip.equals(selfIpAddress))
-    	{
-    		return true;
-    	} else {
-    		return false;
-    	}
     }
     
     @Override

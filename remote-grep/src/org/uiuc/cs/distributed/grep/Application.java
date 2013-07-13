@@ -190,7 +190,7 @@ public class Application {
 				else if ("d".equals(input.trim())) {
 					addDefaultNodes();
 				} else if ("g".equals(input.trim())) {
-					System.out.println(group.list);
+					System.out.println(this.group.toString());
 				}
 				// Run grep
 				else if ("q".equals(input.trim())) {

@@ -362,5 +362,68 @@ public class GroupMembershipTest {
         errorMessage = "The incorrect number of nodes were set in the upper members";
         assertEquals(errorMessage, upperMembers.size(), 0);
     }
+    
+    // ------------------------------------------------------------------
+    
+    /**
+     * create a group membership list and check that the toString() method
+     * identifies the self node correctly
+     */
+    @Test
+    public void testToStringSelfIsIdentifiedCorrectlyLastNode()
+    {
+    	GroupMembership groupMembership = new GroupMembership("1.2.3.6");
+    	groupMembership.add(new Node(717,"1.2.3.4",50));
+    	groupMembership.add(new Node(717,"1.2.3.5",50));
+    	groupMembership.add(new Node(717,"1.2.3.6",50));
+        
+
+
+        boolean expected = true;
+        boolean actual = groupMembership.toString().equals("[717:1.2.3.4:50,717:1.2.3.5:50,(self)717:1.2.3.6:50]");
+        String errorMessage = "The toString method did not produce the expected result";
+        assertEquals(errorMessage, expected, actual);
+    }
+    
+    /**
+     * create a group membership list and check that the toString() method
+     * identifies the self node correctly
+     */
+    @Test
+    public void testToStringSelfIsIdentifiedCorrectlySecondNode()
+    {
+    	GroupMembership groupMembership = new GroupMembership("1.2.3.5");
+    	groupMembership.add(new Node(717,"1.2.3.4",50));
+    	groupMembership.add(new Node(717,"1.2.3.5",50));
+    	groupMembership.add(new Node(717,"1.2.3.6",50));
+        
+
+
+        boolean expected = true;
+        boolean actual = groupMembership.toString().equals("[717:1.2.3.4:50,(self)717:1.2.3.5:50,717:1.2.3.6:50]");
+        String errorMessage = "The toString method did not produce the expected result";
+        assertEquals(errorMessage, expected, actual);
+    }
+    
+    /**
+     * create a group membership list and check that the toString() method
+     * identifies the self node correctly
+     */
+    @Test
+    public void testToStringSelfIsIdentifiedCorrectlyFirstNode()
+    {
+    	GroupMembership groupMembership = new GroupMembership("1.2.3.4");
+    	groupMembership.add(new Node(717,"1.2.3.4",50));
+    	groupMembership.add(new Node(717,"1.2.3.5",50));
+    	groupMembership.add(new Node(717,"1.2.3.6",50));
+        
+
+
+        boolean expected = true;
+        boolean actual = groupMembership.toString().equals("[(self)717:1.2.3.4:50,717:1.2.3.5:50,717:1.2.3.6:50]");
+        String errorMessage = "The toString method did not produce the expected result";
+        assertEquals(errorMessage, expected, actual);
+    }
+    
 
 }
