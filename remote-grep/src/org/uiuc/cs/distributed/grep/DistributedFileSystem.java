@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DistributedFileSystem {
-	Map<String, String> fileMap;
+	Map<String, HashMap<Node,String>> fileMap;
 	
 	public DistributedFileSystem()
 	{

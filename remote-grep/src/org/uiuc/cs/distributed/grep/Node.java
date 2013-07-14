@@ -168,17 +168,4 @@ public class Node implements Comparable<Node>
     {
     	return "<Node "+this.timestamp + ":" + this.ip + ":" + this.port + ", lastUpdated: " +this.lastUpdatedTimestamp+">";
     }
-    
-    public static void main(String[] args)
-    {
-    	GroupMembership groupMembership = new GroupMembership("1.2.3.6");
-    	groupMembership.add(new Node("1.2.3.4:50"));
-    	groupMembership.add(new Node("1.2.3.5:50"));
-    	groupMembership.add(new Node("1.2.3.6:50"));
-        Node receiveNode = groupMembership.getHeartbeatReceiveNode();
-        
-        boolean expected = true;
-        boolean actual = receiveNode.getIP() == "1.2.3.4";
-        System.out.println("hello");
-    }
 }
