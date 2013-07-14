@@ -10,11 +10,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -137,7 +135,7 @@ public class DistributedFileSystemClient {
     
     public void put(String localFile, String sdfsKey){
     	// Add node to local file system before sending to remote nodes for replication.
-    	String fileName = "/home/ebowlin2/mp3/sdfs/files/data" + new Date().getTime() + ".data";
+    	String fileName = "/home/momont2/mp3/sdfs/files/data" + new Date().getTime() + ".data";
     	try {
 			copyFile(new File(localFile), new File(fileName));
 		} catch (IOException e) {
@@ -149,6 +147,96 @@ public class DistributedFileSystemClient {
         
         put(sdfsKey);
     }
+    
+	/**
+	 * Remove file from sdfs file system.
+	 * 
+	 * @param sdfsKey
+	 *            SDFS Key of file to remove
+	 */
+	public void delete(String sdfsKey) {
+		// If file is stored locally, delete
+		if (fileMap.containsKey(sdfsKey)) {
+			deleteSdfsLocalFile(sdfsKey);
+		}
+
+		// Send request to master to remove file
+		try {
+			ArrayList<Node> nodesToRemoveFileFrom = new ArrayList<Node>();
+			
+			// If we're on the master node, we can just ask the server for the list of nodes
+			if (Application.getInstance().group.isLeader()) {
+				nodesToRemoveFileFrom = Application.getInstance().dfsServer.wheredelete(sdfsKey,
+						Application.getInstance().group.getSelfNode().getIP());
+			}
+			// Otherwise we need to send a message to the master to get a list of nodes
+			else
+			{
+				// Connect to the leader (master)
+	            clientSocket = new Socket(Application.getInstance().group.getLeader().getIP(),Application.TCP_SDFS_PORT);
+	            
+	            // Setup our input and output streams
+	            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+	            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+	            
+	            // Ask master for a list of nodes to delete
+	            out.println("wheredelete:" + sdfsKey);
+	            
+	            // Read in nodes from server
+	            String nodeToDeleteFrom = "";
+	            while( (nodeToDeleteFrom = in.readLine()).equals("<END>"))
+	            {
+	            	nodesToRemoveFileFrom.add(new Node(nodeToDeleteFrom,0));
+	            }
+	            
+	            // Cleanup stuff
+	            in.close();
+	            out.close();
+	            clientSocket.close();
+			}
+
+			// Now we have a list of all nodes with the file so we can tell them
+			// to delete it
+			for (Node node : nodesToRemoveFileFrom) {
+				System.out.println("Removing file from node: " + node);
+				clientSocket = new Socket(node.getIP(),
+						Application.TCP_SDFS_PORT);
+
+				// Setup our input and output streams
+				PrintWriter out = new PrintWriter(
+						clientSocket.getOutputStream(), true);
+				out.println("delete:" + sdfsKey);
+			}
+		} catch (Exception e) {
+			System.out.println("DELETE: Fail");
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Deletes file from local disk and file map
+	 * @param sdfsKey
+	 */
+	public void deleteSdfsLocalFile(String sdfsKey) {
+		// Get local filename
+		String localFilePath = fileMap.get(sdfsKey);
+		File fileToDelete = new File(localFilePath);
+
+		System.out.println("Deleting local file: " + localFilePath);
+		
+		// Delete local file
+		if(fileToDelete.delete())
+		{
+			System.out.println("File Deleted.");
+		}
+		else
+		{
+			System.out.println("Failed to remove file from disk. Will only remove from file map.");
+		}
+		
+		// Remove deleted file + key from file map
+		fileMap.remove(sdfsKey);
+	}
     
     public synchronized void updateFileMap(String sdfs_key, String local_filepath)
     {
@@ -245,4 +333,5 @@ public class DistributedFileSystemClient {
     	    }
     	  }
     	}
+
 }

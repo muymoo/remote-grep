@@ -262,7 +262,18 @@ public class Application {
 						break;
 					}
 					dfsClient.get(putCommand[1], putCommand[2]);
-				} 			
+				}
+				else if(input.startsWith("delete "))
+				{
+					System.out.println("Input starts with delete, remove file.");
+					String[] putCommand = input.split(" ");
+					if(putCommand.length != 2)
+					{
+						System.out.println("Usage: delete <sdfs_file_name>");
+						break;
+					}
+					dfsClient.delete(putCommand[1]);
+				}
 				else if ("x".equals(input.trim()))
 				{
 					System.out.println("GlobalFileMap: ");

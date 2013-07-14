@@ -1,17 +1,11 @@
 package org.uiuc.cs.distributed.grep;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 /**
  * The grep server listens for regular expressions (regex) coming into port 4444
@@ -96,7 +90,7 @@ public class GrepServer extends Thread
                         out.println("Shutting Down");
                         break;
                     }
-                    clientOutput = grep.search(clientInput); // run grep
+                    	clientOutput = grep.search(clientInput); // run grep
                     Application.LOGGER.info("GrepServer - run - clientOutput: " + clientOutput);
                     clientOutput += "<END>\n";
                     out.print(clientOutput); // Send results back to client

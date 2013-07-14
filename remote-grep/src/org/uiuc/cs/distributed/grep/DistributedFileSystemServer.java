@@ -127,7 +127,7 @@ class DistributedFileSystemServer extends Thread {
 	            else if(command.equals("put")) 
 	            {
 	                // We are going to store the put'd file on the local machine here (unique file name)
-	                String fileName = "/home/ebowlin2/mp3/sdfs/files/data" + new Date().getTime() + ".data";
+	                String fileName = "/home/momont2/mp3/sdfs/files/data" + new Date().getTime() + ".data";
 	                File localFile = new File(fileName);
 	                
 	    
@@ -149,6 +149,23 @@ class DistributedFileSystemServer extends Thread {
 	                // Update the file map on this node
 	                Application.getInstance().dfsClient.updateFileMap(sdfs_key,fileName);
 	                
+	            }	            
+	            else if(command.equals("wheredelete"))
+	            {
+	            	ArrayList<Node> nodesWithFile = wheredelete(sdfs_key, clientSocket.getInetAddress().getHostAddress());
+	                for(Node node : nodesWithFile)
+	                {
+	                    out.println(node.getIP());
+	                }
+	                out.println("<END>");
+	                
+	        		// Remove the key from the global map
+	        		globalFileMap.remove(sdfs_key);
+	            }
+	            else if(command.equals("delete"))
+	            {
+	            	System.out.println("Deleting: " + sdfs_key);
+	            	Application.getInstance().dfsClient.deleteSdfsLocalFile(sdfs_key);
 	            }
 	            else if(command.equals("getlist"))
 	            {
@@ -163,6 +180,7 @@ class DistributedFileSystemServer extends Thread {
 	            {
 	                Application.getInstance().dfsClient.put(sdfs_key);
 	            }
+
         	} catch(IOException e)
         	{
         		e.printStackTrace();
@@ -213,6 +231,28 @@ class DistributedFileSystemServer extends Thread {
         }
     }
     
+	/**
+	 * Finds all nodes that need to remove the selected file.
+	 * 
+	 * @param sdfsKey
+	 *            SDFS file key to delete
+	 * @param ip
+	 *            Node requesting the delete
+	 * @return List of nodes that have the file to delete.
+	 */
+	public ArrayList<Node> wheredelete(String sdfsKey, String ip) {
+		ArrayList<Node> result = new ArrayList<Node>();
+		for (Node node : globalFileMap.get(sdfsKey)) {
+			// Since we've already deleted the file from the requesting ip, we
+			// can skip it.
+			if (!node.getIP().equals(ip)) {
+				// add node to list of nodes to delete
+				result.add(node);
+			}
+		}
+		return result;
+	}
+
     /**
      * returns the local file path of the file to stream back to the client
      * @returns String - local file path of file to stream
@@ -237,38 +277,41 @@ class DistributedFileSystemServer extends Thread {
              globalFileMap.put(sdfs_key, nodes);
          }
          
-         try
-         {
-          // contact all other nodes to get their maps, and add to global map
-          List<Node> allOtherNodes = Application.getInstance().group.getOtherNodes();
-          for(Node node : allOtherNodes)
-          {
-            Application.getInstance().group.getLeader().getIP();
-            
-            Socket cSocket = new Socket(node.getIP(),Application.TCP_SDFS_PORT);
-            
-            // Setup our input and output streams
-            PrintWriter out = new PrintWriter(cSocket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
-            
-            out.println("getlist:FILLERDATA");
-            String inputLine="";
-            while((inputLine = in.readLine()) != "<END>")
-            {
-                String curr_sdfs_key = inputLine;
-                if(!globalFileMap.containsKey(curr_sdfs_key))
-                {
-                    Set<Node> nodes = new HashSet<Node>();
-                    nodes.add(node);
-                    globalFileMap.put(curr_sdfs_key, nodes);
-                } else {
-                    globalFileMap.get(curr_sdfs_key).add(node);
-                }
-            }
-          }
-         } catch (IOException e) {
-        	 e.printStackTrace();
-         }
+		try {
+			// contact all other nodes to get their maps, and add to global map
+			List<Node> allOtherNodes = Application.getInstance().group
+					.getOtherNodes();
+			for (Node node : allOtherNodes) {
+				Application.getInstance().group.getLeader().getIP();
+
+				Socket cSocket = new Socket(node.getIP(),
+						Application.TCP_SDFS_PORT);
+
+				// Setup our input and output streams
+				PrintWriter out = new PrintWriter(cSocket.getOutputStream(),
+						true);
+				BufferedReader in = new BufferedReader(new InputStreamReader(
+						cSocket.getInputStream()));
+
+				out.println("getlist:FILLERDATA");
+				String inputLine = "";
+				while ((inputLine = in.readLine()) != "<END>") {
+					String curr_sdfs_key = inputLine;
+					if (!globalFileMap.containsKey(curr_sdfs_key)) {
+						Set<Node> nodes = new HashSet<Node>();
+						nodes.add(node);
+						globalFileMap.put(curr_sdfs_key, nodes);
+					} else {
+						globalFileMap.get(curr_sdfs_key).add(node);
+					}
+				}
+				out.close();
+				in.close();
+				cSocket.close();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
     
     public void removeFailedNodeEntries(Node nodeToRemove)
@@ -279,11 +322,14 @@ class DistributedFileSystemServer extends Thread {
 	        
 	        for(String key : globalFileMap.keySet())
 	        {
-	            for(Node node : globalFileMap.get(key))
+	        	Iterator<Node> it = globalFileMap.get(key).iterator();
+	            while(it.hasNext())
 	            {
+	            	Node node = it.next();
 	                if(node.equals(nodeToRemove))
 	                {
-	                    //remove node from list
+	                	// remove node from map
+	                	it.remove();
 	                }
 	            }
 	        }
@@ -307,6 +353,10 @@ class DistributedFileSystemServer extends Thread {
 	                    BufferedReader in = new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
 	                    
 	                    out.println("replicate:"+key);
+	                    
+	                    out.close();
+	                    in.close();
+	                    cSocket.close();
 	                } else {
 	                    Application.getInstance().dfsClient.put(key);
 	                }
@@ -316,4 +366,5 @@ class DistributedFileSystemServer extends Thread {
     		e.printStackTrace();
     	}
     }
+
 }
