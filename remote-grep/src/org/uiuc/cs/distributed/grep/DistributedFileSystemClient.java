@@ -135,7 +135,7 @@ public class DistributedFileSystemClient {
     
     public void put(String localFile, String sdfsKey){
     	// Add node to local file system before sending to remote nodes for replication.
-    	String fileName = "/home/momont2/mp3/sdfs/files/data" + new Date().getTime() + ".data";
+    	String fileName = "/tmp/momont2/sdfs/files/data" + new Date().getTime() + ".data";
     	try {
 			copyFile(new File(localFile), new File(fileName));
 		} catch (IOException e) {

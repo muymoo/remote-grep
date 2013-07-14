@@ -127,7 +127,7 @@ class DistributedFileSystemServer extends Thread {
 	            else if(command.equals("put")) 
 	            {
 	                // We are going to store the put'd file on the local machine here (unique file name)
-	                String fileName = "/home/momont2/mp3/sdfs/files/data" + new Date().getTime() + ".data";
+	                String fileName = "/tmp/momont2/sdfs/files/data" + new Date().getTime() + ".data";
 	                File localFile = new File(fileName);
 	                
 	    
