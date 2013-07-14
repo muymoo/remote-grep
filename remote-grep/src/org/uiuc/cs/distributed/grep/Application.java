@@ -43,8 +43,9 @@ public class Application {
 	private static Application instance = null;
 	private GrepServer grepServer;
 	private GroupServer groupServer;
-	private DistributedFileSystemListener sdfsListener;
 	private static GroupClient groupClient;
+	public DistributedFileSystemServer dfsServer;
+	public DistributedFileSystemClient dfsClient;
 	private FailureDetectorServer failureDetectorServer;
 	private FailureDetectorClient failureDetectorClient;
 	public ArrayList<GrepTask> grepTasks;
@@ -56,7 +57,7 @@ public class Application {
 	public GroupMembership group;
 	public static String hostaddress = "";
 
-	private DistributedFileSystem sdfs;
+
 	
 	/**
 	 * Main server. The log location is where the server logs will be stored as
@@ -68,7 +69,7 @@ public class Application {
 	private Application() {
 		this.grepTasks = new ArrayList<GrepTask>();
 		this.group = new GroupMembership(Application.hostaddress);
-		this.sdfs = new DistributedFileSystem();
+		this.dfsClient = new DistributedFileSystemClient();
 	}
 
 	/**
@@ -127,7 +128,8 @@ public class Application {
 		this.failureDetectorClient = new FailureDetectorClient();
 		this.grepServer = new GrepServer();
 		this.groupServer = new GroupServer();
-		this.sdfsListener = new DistributedFileSystemListener();
+		this.dfsServer = new DistributedFileSystemServer();
+		this.dfsClient = new DistributedFileSystemClient();
 	}
 
 	/**
@@ -248,7 +250,23 @@ public class Application {
 						System.out.println("Usage: put <local_file_name> <sdfs_file_name>");
 						break;
 					}
-					sdfs.put(putCommand[1], putCommand[2]);
+					dfsClient.put(putCommand[1], putCommand[2]);
+				}
+				else if(input.startsWith("get "))
+				{
+					System.out.println("Input starts with get, receive file.");
+					String[] putCommand = input.split(" ");
+					if(putCommand.length != 3)
+					{
+						System.out.println("Usage: get <sdfs_file_name> <local_file_name>");
+						break;
+					}
+					dfsClient.get(putCommand[1], putCommand[2]);
+				} 			
+				else if ("x".equals(input.trim()))
+				{
+					System.out.println("GlobalFileMap: ");
+					System.out.println(dfsServer.globalFileMap.toString());
 				}
 			} catch (IOException e) {
 				LOGGER.warning("Application - run() - failed to readline from the input");
@@ -267,7 +285,7 @@ public class Application {
 	}
 
 	private void startDistributedFileSystemListener() {
-		sdfsListener.start();
+		dfsServer.start();
 	}
 
 	/**

@@ -78,6 +78,15 @@ public class GroupMembership {
 		return null;
 	}
 	
+	public boolean isLeader()
+	{
+		if(Application.hostaddress.equals(Application.LINUX_5))
+		{
+			return true;
+		}
+		return false;
+	}
+	
 	/**
 	 * return a list of all nodes except this one
 	 * 
