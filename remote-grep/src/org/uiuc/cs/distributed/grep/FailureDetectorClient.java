@@ -107,7 +107,6 @@ public class FailureDetectorClient{
 						}
 						
 						try {
-							System.out.println("sending heartbeat to: "+node.getIP());
 							sendData(target,"HEARTBEAT");
 						} catch (IOException e) {
 							e.printStackTrace();

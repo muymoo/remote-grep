@@ -21,12 +21,7 @@ public class GroupServer extends Thread {
 
 	public GroupServer(String name)  {
 		super(name);
-		try {
-			socket = new DatagramSocket(Application.UDP_PORT);
-		} catch (SocketException e1) {
-			Application.LOGGER.severe("GroupServer - Socket is already in use: " + Application.UDP_PORT);
-			return;
-		}
+
 	}
 
 	/**
@@ -44,6 +39,12 @@ public class GroupServer extends Thread {
 	 * an older instance in the case where the timestamps are different.
 	 */
 	public void run() {
+		try {
+			socket = new DatagramSocket(Application.UDP_PORT);
+		} catch (SocketException e1) {
+			Application.LOGGER.severe("GroupServer - Socket is already in use: " + Application.UDP_PORT);
+			return;
+		}
 
 		while (alive) {
 			try {
