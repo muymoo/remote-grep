@@ -139,12 +139,6 @@ public class FailureDetectorServer {
 								Application.LOGGER.info(new Date().getTime()+" RQ1: FailureDetectorServer - run() - failure detected at node: "+ node.verboseToString());
 
 								System.out.println(new Date().getTime()+" failure detected at node: "+node.verboseToString());
-								// remove from list
-								Application.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
-								System.out.println("Removing node: "+node.toString());
-
-								// Remove node from list (must use iterator since that's how we're looping)
-								Application.getInstance().group.remove(node);
 								
 								try {
 									// Notify others that node has been removed.
@@ -154,6 +148,12 @@ public class FailureDetectorServer {
 								} catch (IOException e) {
 									e.printStackTrace();
 								}
+								
+								// remove from list
+								Application.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
+								System.out.println("Removing node: "+node.toString());
+								// Remove node from list
+								Application.getInstance().group.remove(node);
 							}
 						}
 				    }

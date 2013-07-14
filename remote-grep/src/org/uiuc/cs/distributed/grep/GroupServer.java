@@ -21,6 +21,12 @@ public class GroupServer extends Thread {
 
 	public GroupServer(String name)  {
 		super(name);
+		try {
+			socket = new DatagramSocket(Application.UDP_PORT);
+		} catch (SocketException e1) {
+			Application.LOGGER.severe("GroupServer - Socket is already in use: " + Application.UDP_PORT);
+			return;
+		}
 	}
 
 	/**
@@ -38,12 +44,7 @@ public class GroupServer extends Thread {
 	 * an older instance in the case where the timestamps are different.
 	 */
 	public void run() {
-		try {
-			socket = new DatagramSocket(Application.UDP_PORT);
-		} catch (SocketException e1) {
-			Application.LOGGER.severe("GroupServer - run() - Socket is already in use: " + Application.UDP_PORT);
-			return;
-		}
+
 		while (alive) {
 			try {
 				byte[] buf = new byte[256];
@@ -54,11 +55,15 @@ public class GroupServer extends Thread {
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
 				socket.receive(packet);
 				String timestamp = new String (packet.getData(), 0, packet.getLength(), "UTF-8");
-				
+				System.out.println("timestamp: "+timestamp);
 				// Add node to group list				
 				Application.LOGGER.info("RQ1: GroupServer - run() - Join request recieved");
-				Node newNode = new Node(Long.parseLong(timestamp), packet.getAddress().getHostAddress(), packet.getPort());
-				
+				Node newNode=null;
+				try {
+					newNode = new Node(Long.parseLong(timestamp), packet.getAddress().getHostAddress(), packet.getPort());
+				} catch(NumberFormatException e) {
+					Application.LOGGER.severe("GroupServer - run() - parseLong failed for string: "+timestamp);
+				}
 				synchronized(Application.getInstance().group.list)
 				{
 					if(!Application.getInstance().group.list.contains(newNode))

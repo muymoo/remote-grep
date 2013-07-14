@@ -9,6 +9,10 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -45,7 +49,7 @@ public class Application {
 	private FailureDetectorClient failureDetectorClient;
 	public ArrayList<GrepTask> grepTasks;
 	public GrepTask taskToStopServer;
-	private static final String LINUX_5 = "130.126.112.148";
+	public static final String LINUX_5 = "130.126.112.148";
 	private static String[] servers = new String[] { LINUX_5 + ":" + TCP_PORT,
 			"130.126.112.146:4444", "130.126.112.117:4444" };
 
@@ -145,18 +149,20 @@ public class Application {
 		}
 		// If this is the introducer node, start listening for incoming requests
 		if (hostaddress.equals(LINUX_5)) {
-			synchronized (group.list) {
-
+			synchronized (group) {
+				//joinGroup();
+				
 				// Add Linux5 as the first member
 				Node newNode = new Node(System.currentTimeMillis(),
 						hostaddress, Integer.valueOf(UDP_PORT));
-				group.list.add(newNode);
+				group.add(newNode);
 
 				startGroupServer();
 				LOGGER.info("Application - run() - Listening for join requests.");
 				System.out
 						.println("Group Server started. Listening for join requests.");
-			}
+
+			}			
 		}
 
 		InputStreamReader inputStreamReader = new InputStreamReader(System.in);

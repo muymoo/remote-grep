@@ -95,7 +95,7 @@ public class GroupClient extends Thread {
 								Application.getInstance().group.remove(updatedNode);
 							}
 							
-							Application.LOGGER.info("GroupClient - run() - Updated membership list: " + Application.getInstance().group.list);
+							Application.LOGGER.info("GroupClient - run() - Updated membership list: " + Application.getInstance().group.toString());
 							System.out.println("Updated membership list: " + Application.getInstance().group.list);
 						}
 					}

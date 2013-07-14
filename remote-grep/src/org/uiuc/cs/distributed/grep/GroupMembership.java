@@ -10,6 +10,8 @@ public class GroupMembership {
 	
 	private int selfIndex = 0;
 	private String selfIP;
+	private int leaderIndex = 0;
+	private boolean electionInProgress = false;
 	
 	
 	public GroupMembership(String _selfIP) {
@@ -18,14 +20,19 @@ public class GroupMembership {
 		this.selfIP = _selfIP;
 	}
 	
+	/**
+	 * get the nodes that ranked higher than this node
+	 * 
+	 * @return
+	 */
 	public List<Node> getUpperMembers()
 	{
+		List<Node> list = new ArrayList<Node>();
 		if(this.list.size() < 2)
 		{
-			return null;
+			return list;
 		}
-		
-		List<Node> list = new ArrayList<Node>();
+
 		for(int i=this.selfIndex;i<this.list.size();i++)
 		{
 			if(i != this.selfIndex)
@@ -36,15 +43,55 @@ public class GroupMembership {
 		return list;
 	}
 	
+	/**
+	 * get the nodes that are ranked lower than this node
+	 * 
+	 * @return List<Node> - list of lower ranked nodes
+	 */
 	public List<Node> getLowerMembers()
 	{
+		List<Node> list = new ArrayList<Node>();
 		if(this.list.size() < 2)
 		{
-			return null;
+			return list;
 		}
 		
-		List<Node> list = new ArrayList<Node>();
 		for(int i=0;i<this.selfIndex;i++)
+		{
+			if(i != this.selfIndex)
+			{
+				list.add(this.list.get(i));
+			}
+		}
+		return list;
+	}
+	
+	public Node getLeader()
+	{
+		// TODO: implement leader logic
+		for(int i=0;i<this.list.size();i++) {
+			if(this.list.get(i).getIP().equals(Application.LINUX_5))
+			{
+				return this.list.get(i);
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * return a list of all nodes except this one
+	 * 
+	 * @return List<Node> - all other nodes
+	 */
+	public List<Node> getOtherNodes()
+	{
+		List<Node> list = new ArrayList<Node>();
+		if(this.list.size() < 2)
+		{
+			return list;
+		}
+
+		for(int i=0;i<this.list.size();i++)
 		{
 			if(i != this.selfIndex)
 			{
@@ -113,6 +160,22 @@ public class GroupMembership {
 			}
 		}
 		return -1;
+	}
+	
+	/**
+	 * return the node that corresponds to the machine this process
+	 * is running on
+	 * 
+	 * @return Node - self node
+	 */
+	public Node getSelfNode()
+	{
+		if(this.list.size() == 0)
+		{
+			return null;
+		} else {
+			return this.list.get(this.selfIndex);
+		}
 	}
 	
 	public void add(Node node)
