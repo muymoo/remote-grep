@@ -9,10 +9,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -30,12 +26,13 @@ import java.util.logging.SimpleFormatter;
  */
 public class Application {
 	public static String logLocation = "";
-	public static final int TCP_PORT = 4456;
-	public static final int UDP_PORT = 4457;
-	public static final int UDP_MC_PORT = 4458;
-	public static final int UDP_FD_PORT = 4459; // port for failure detection
-	public static final int TCP_SDFS_PORT = 4450; // SDFS put, get, delete
+	public static final int TCP_PORT = 5464;
+	public static final int UDP_PORT = 5465;
+	public static final int UDP_MC_PORT = 5466;
+	public static final int UDP_FD_PORT = 5466; // port for failure detection
+	public static final int TCP_SDFS_PORT = 5468; // SDFS put, get, delete
 	public static final String UDP_MC_GROUP = "228.6.7.8";
+
 	public static final int timeBoundedFailureInMilli = 5000;
 	public static Logger LOGGER;
 
@@ -246,7 +243,11 @@ public class Application {
 						System.out.println("Usage: put <local_file_name> <sdfs_file_name>");
 						break;
 					}
+					long start = System.currentTimeMillis();
 					dfsClient.put(putCommand[1], putCommand[2]);
+					long end = System.currentTimeMillis();
+
+					System.out.println("Put Time: " + (end - start) + "ms");
 				}
 				else if(input.startsWith("get "))
 				{
@@ -257,7 +258,11 @@ public class Application {
 						System.out.println("Usage: get <sdfs_file_name> <local_file_name>");
 						break;
 					}
+					long start = System.currentTimeMillis();
 					dfsClient.get(putCommand[1], putCommand[2]);
+					long end = System.currentTimeMillis();
+
+					System.out.println("Get Time: " + (end - start) + "ms");
 				}
 				else if(input.startsWith("delete "))
 				{

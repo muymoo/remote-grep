@@ -23,6 +23,12 @@ public class GroupClient extends Thread {
 	
 	GroupClient() {
 		super("GroupClient");
+		try {
+			socket = new MulticastSocket(Application.UDP_MC_PORT);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -49,7 +55,7 @@ public class GroupClient extends Thread {
 	 */
 	public void run() {
 		try {
-			socket = new MulticastSocket(Application.UDP_MC_PORT);
+			
 			group = InetAddress.getByName(Application.UDP_MC_GROUP);
 			
 			socket.joinGroup(group);
