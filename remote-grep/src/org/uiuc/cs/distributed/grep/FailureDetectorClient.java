@@ -145,6 +145,7 @@ public class FailureDetectorClient{
 								
 								if(timeSinceReceived > (5 * Application.timeBoundedFailureInMilli))
 								{
+									//FailureDetectorClient.resetLeaderElectionStatus();
 									Application.LOGGER.warning("FailureDetectorClient - run() - has not received coordinator message in over 5 * timeout!!");
 								}
 							} else {
@@ -219,6 +220,7 @@ public class FailureDetectorClient{
 						{
 							FailureDetectorClient.resetLeaderElectionStatus();
 						}
+						Application.getInstance().dfsServer.populateGlobalFileMap();
 					}
 				} else if(Application.getInstance().groupServer.joinedGroup) {
 					// Only send heartbeats if an election is not in progress

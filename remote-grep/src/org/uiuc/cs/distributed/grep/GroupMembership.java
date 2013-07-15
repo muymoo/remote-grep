@@ -10,7 +10,7 @@ public class GroupMembership {
 	
 	private int selfIndex = 0;
 	private String selfIP;
-	private String leaderIP;
+	private String leaderIP="";
 	private int leaderIndex = 0;
 	public boolean electionInProgress = true;
 	
@@ -76,18 +76,8 @@ public class GroupMembership {
 	}
 	
 	public Node getLeader()
-	{
-		/*
-		for(int i=0;i<this.list.size();i++) {
-			if(this.list.get(i).getIP().equals(Application.INTRODUCER_IP))
-			{
-				return this.list.get(i);
-			}
-		}
-		return null;
-*/
-		
-		if(!this.electionInProgress)
+	{	
+		if(!this.electionInProgress && leaderIndex < this.list.size())
 		{
 			return this.list.get(leaderIndex);
 		}
@@ -115,6 +105,13 @@ public class GroupMembership {
 	{
 		this.leaderIndex = this.selfIndex;
 		this.electionInProgress = false;
+		this.leaderIP = Application.hostaddress;
+	}
+	
+	public void setLeader(String IP)
+	{
+		this.leaderIP = IP;
+		
 	}
 
 	
@@ -149,6 +146,7 @@ public class GroupMembership {
 			{
 				this.leaderIndex = i;
 				this.electionInProgress = false;
+				setLeader(node.getIP());
 				return true;
 			}
 		}
@@ -215,6 +213,28 @@ public class GroupMembership {
 		}
 		return 0;
 	}
+	
+	/**
+	 * returns the index of the node which corresponds to the leader
+	 * 
+	 * @return int - the index of the leader node 
+	 */
+	public int getLeaderIndex()
+	{
+		if(this.list.size() == 0)
+		{
+			return 0;
+		} else {
+			for(int i=0;i<this.list.size();i++)
+			{
+				if(this.list.get(i).getIP().compareTo(this.leaderIP) == 0)
+				{
+					return i;
+				}
+			}
+		}
+		return 0;
+	}
 
 	
 	/**
@@ -238,25 +258,10 @@ public class GroupMembership {
 		if(node.isValid() &&
 				!this.list.contains(node))
 		{
-			Node leaderNode = null;
-			if(!this.electionInProgress && this.list.size() > 1)
-				leaderNode = getLeader();
-			
 			this.list.add(node);
 			Collections.sort(this.list);
 			this.selfIndex = getSelfIndex();
-			
-			
-			if(leaderNode != null)
-			{
-				for(int i=0;i<this.list.size();i++)
-				{
-					if(this.list.get(i).getIP().equals(leaderNode.getIP()))
-					{
-						this.leaderIndex = i;
-					}
-				}
-			}
+			this.leaderIndex = getLeaderIndex();
 		}
 	}
 	
@@ -271,16 +276,10 @@ public class GroupMembership {
 				{
 					this.electionInProgress = true;
 				}
-				for(int i=0;i<this.list.size();i++)
-				{
-					if(this.list.get(i).getIP().equals(leaderNode.getIP()))
-					{
-						this.leaderIndex = i;
-					}
-				}
 			}
 			this.list.remove(node);
 			this.selfIndex = getSelfIndex();
+			this.leaderIndex = getLeaderIndex();
 		}
 	}
 	

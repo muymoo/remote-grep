@@ -41,12 +41,7 @@ class DistributedFileSystemServer extends Thread {
      */
     @Override
     public void run()
-    {
-    	if(Application.getInstance().group.isLeader())
-    	{
-    		populateGlobalFileMap();
-    	}
-    	
+    {    	
         while(true) {
         	try {   	
 	            Socket clientSocket = serverSocket.accept();
@@ -116,11 +111,16 @@ class DistributedFileSystemServer extends Thread {
 	                // add to masterFileMap key:sdfs_key value: += requestingNode
 	            	Set<Node> nodes = new HashSet<Node>();
 	            	nodes.add(new Node(clientSocket.getInetAddress().getHostAddress(),Application.TCP_SDFS_PORT));
-	                globalFileMap.put(sdfs_key, nodes);
-	                
+	                synchronized(globalFileMap)
+	                {
+	                	globalFileMap.put(sdfs_key, nodes);
+	                }
 	                // Where are we going to replicate this node since we've already stored it locally?
 	                String nodeToPutIP = whereput(sdfs_key, clientSocket.getInetAddress().getHostAddress());
-	                globalFileMap.get(sdfs_key).add(new Node(nodeToPutIP, Application.TCP_SDFS_PORT)); // Add replicated node
+	                synchronized(globalFileMap)
+	                {
+	                	globalFileMap.get(sdfs_key).add(new Node(nodeToPutIP, Application.TCP_SDFS_PORT)); // Add replicated node
+	                }
 	                System.out.println("whereput: "+nodeToPutIP);
 	                out.println(nodeToPutIP);
 	            } 
@@ -160,7 +160,10 @@ class DistributedFileSystemServer extends Thread {
 	                out.println("<END>");
 	                
 	        		// Remove the key from the global map
-	        		globalFileMap.remove(sdfs_key);
+	                synchronized(globalFileMap)
+	                {
+	                	globalFileMap.remove(sdfs_key);
+	                }
 	            }
 	            else if(command.equals("delete"))
 	            {
@@ -196,15 +199,16 @@ class DistributedFileSystemServer extends Thread {
     {
         // check to make sure the sdfsKey is in the file map and that
         // nodes exist within the list
-        System.out.println("globalFileMap.contains key: "+globalFileMap.containsKey(sdfsKey));
-        System.out.println("globalFileMap.get key .size() "+globalFileMap.get(sdfsKey).size());
-        if(globalFileMap.containsKey(sdfsKey) &&
-        globalFileMap.get(sdfsKey).size() > 0)
+        synchronized(globalFileMap)
         {
-            //check the DistributedFileSystemClient map for the sdfs key
-            Iterator<Node> it = globalFileMap.get(sdfsKey).iterator();
-            Node node = it.next();
-            return node.getIP(); // node file is stored on
+	        if(globalFileMap.containsKey(sdfsKey) &&
+	        globalFileMap.get(sdfsKey).size() > 0)
+	        {
+	            //check the DistributedFileSystemClient map for the sdfs key
+	            Iterator<Node> it = globalFileMap.get(sdfsKey).iterator();
+	            Node node = it.next();
+	            return node.getIP(); // node file is stored on
+	        }
         }
 
         return "";
@@ -242,12 +246,15 @@ class DistributedFileSystemServer extends Thread {
 	 */
 	public ArrayList<Node> wheredelete(String sdfsKey, String ip) {
 		ArrayList<Node> result = new ArrayList<Node>();
-		for (Node node : globalFileMap.get(sdfsKey)) {
-			// Since we've already deleted the file from the requesting ip, we
-			// can skip it.
-			if (!node.getIP().equals(ip)) {
-				// add node to list of nodes to delete
-				result.add(node);
+		synchronized(globalFileMap)
+		{
+			for (Node node : globalFileMap.get(sdfsKey)) {
+				// Since we've already deleted the file from the requesting ip, we
+				// can skip it.
+				if (!node.getIP().equals(ip)) {
+					// add node to list of nodes to delete
+					result.add(node);
+				}
 			}
 		}
 		return result;
@@ -270,11 +277,15 @@ class DistributedFileSystemServer extends Thread {
     
     void populateGlobalFileMap()
     {
+    	long start = new Date().getTime();
          // add contents of local file to global map
          for(String sdfs_key : Application.getInstance().dfsClient.getFilesOnNode()) {
              Set<Node> nodes = new HashSet<Node>();
              nodes.add(Application.getInstance().group.getSelfNode());
-             globalFileMap.put(sdfs_key, nodes);
+             synchronized(globalFileMap)
+             {
+            	 globalFileMap.put(sdfs_key, nodes);
+             }
          }
          
 		try {
@@ -283,10 +294,9 @@ class DistributedFileSystemServer extends Thread {
 					.getOtherNodes();
 			for (Node node : allOtherNodes) {
 				Application.getInstance().group.getLeader().getIP();
-
+				
 				Socket cSocket = new Socket(node.getIP(),
 						Application.TCP_SDFS_PORT);
-
 				// Setup our input and output streams
 				PrintWriter out = new PrintWriter(cSocket.getOutputStream(),
 						true);
@@ -295,14 +305,18 @@ class DistributedFileSystemServer extends Thread {
 
 				out.println("getlist:FILLERDATA");
 				String inputLine = "";
-				while ((inputLine = in.readLine()) != "<END>") {
+				
+				while (!(inputLine = in.readLine()).equals("<END>")) {
 					String curr_sdfs_key = inputLine;
-					if (!globalFileMap.containsKey(curr_sdfs_key)) {
-						Set<Node> nodes = new HashSet<Node>();
-						nodes.add(node);
-						globalFileMap.put(curr_sdfs_key, nodes);
-					} else {
-						globalFileMap.get(curr_sdfs_key).add(node);
+					synchronized(globalFileMap)
+					{
+						if (!globalFileMap.containsKey(curr_sdfs_key)) {
+							Set<Node> nodes = new HashSet<Node>();
+							nodes.add(node);
+							globalFileMap.put(curr_sdfs_key, nodes);
+						} else {
+							globalFileMap.get(curr_sdfs_key).add(node);
+						}
 					}
 				}
 				out.close();
@@ -312,6 +326,8 @@ class DistributedFileSystemServer extends Thread {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		long time = new Date().getTime() - start;
+    	System.out.println("Populated global file map took "+time+"ms");
     }
     
     public void removeFailedNodeEntries(Node nodeToRemove)
@@ -334,33 +350,44 @@ class DistributedFileSystemServer extends Thread {
 	            }
 	        }
 	        
-	        // search for files that need to be replicated
-	        for(String key : globalFileMap.keySet())
+	        Map<String,String> ipMessagePairs = new HashMap<String,String>();
+	        synchronized(globalFileMap)
 	        {
-	            if(globalFileMap.get(key).size() == 0)
-	            {
-	                globalFileMap.remove(key);
-	            }
-	            else if(globalFileMap.get(key).size() == 1)
-	            {
-	                Iterator<Node> it = globalFileMap.get(key).iterator();
-	    		    Node node = it.next();
-	                if(!Application.getInstance().group.getSelfNode().equals(node))
-	                {
-	                	Socket cSocket = new Socket(node.getIP(),Application.TCP_SDFS_PORT);
-	                    // Setup our input and output streams
-	                    PrintWriter out = new PrintWriter(cSocket.getOutputStream(), true);
-	                    BufferedReader in = new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
-	                    
-	                    out.println("replicate:"+key);
-	                    
-	                    out.close();
-	                    in.close();
-	                    cSocket.close();
-	                } else {
-	                    Application.getInstance().dfsClient.put(key);
-	                }
-	            }
+		        // search for files that need to be replicated
+		        for(String key : globalFileMap.keySet())
+		        {
+		            if(globalFileMap.get(key).size() == 0)
+		            {
+		                globalFileMap.remove(key);
+		            }
+		            else if(globalFileMap.get(key).size() == 1)
+		            {
+		                Iterator<Node> it = globalFileMap.get(key).iterator();
+		    		    Node node = it.next();
+		                ipMessagePairs.put(key,node.getIP());
+		                
+		            }
+		        }
+	        }
+	        
+	        for(String key : ipMessagePairs.keySet())
+	        {
+                if(!Application.getInstance().group.getSelfNode().getIP().equals(ipMessagePairs.get(key)))
+                {
+    	        	Socket cSocket = new Socket(ipMessagePairs.get(key),Application.TCP_SDFS_PORT);
+                    // Setup our input and output streams
+                    PrintWriter out = new PrintWriter(cSocket.getOutputStream(), true);
+                    BufferedReader in = new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
+                    
+                    out.println("replicate:"+key);
+                    
+                    out.close();
+                    in.close();
+                    cSocket.close();
+                } else {
+                    Application.getInstance().dfsClient.put(key);
+                }
+
 	        }
     	} catch (IOException e) {
     		e.printStackTrace();

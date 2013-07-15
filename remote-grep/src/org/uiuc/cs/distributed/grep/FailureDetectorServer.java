@@ -151,6 +151,10 @@ public class FailureDetectorServer {
 							System.out.println("Removing node: "+node.toString());
 							// Remove node from list
 							Application.getInstance().group.remove(node);
+							if(Application.getInstance().group.isLeader())
+							{
+								Application.getInstance().dfsServer.removeFailedNodeEntries(node);
+							}
 						}
 					}
 			    }
@@ -315,7 +319,10 @@ public class FailureDetectorServer {
 						if(Application.verbose)
 							System.out.println("Received coordinator message from: "+sendingNodeIP);
 						boolean result = Application.getInstance().group.receivedCoordinatorMessage(new Node(sendingNodeIP,Application.UDP_FD_PORT));
-						
+						synchronized(FailureDetectorClient.leaderElection)
+						{
+							FailureDetectorClient.resetLeaderElectionStatus();
+						}
 						if(result)
 						{
 							Application.LOGGER.info("FailureDetectorServer - producer.run() - received coordinator message from: "+sendingNodeIP);
