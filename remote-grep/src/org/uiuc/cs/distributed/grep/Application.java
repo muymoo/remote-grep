@@ -26,11 +26,11 @@ import java.util.logging.SimpleFormatter;
  */
 public class Application {
 	public static String logLocation = "";
-	public static final int TCP_PORT = 5464;
-	public static final int UDP_PORT = 5465;
-	public static final int UDP_MC_PORT = 5466;
-	public static final int UDP_FD_PORT = 5466; // port for failure detection
-	public static final int TCP_SDFS_PORT = 5468; // SDFS put, get, delete
+	public static final int TCP_PORT = 4461;
+	public static final int UDP_PORT = 4462;
+	public static final int UDP_MC_PORT = 4463;
+	public static final int UDP_FD_PORT = 4464; // port for failure detection
+	public static final int TCP_SDFS_PORT = 4465; // SDFS put, get, delete
 	public static final String UDP_MC_GROUP = "228.6.7.8";
 
 	public static final int timeBoundedFailureInMilli = 5000;
@@ -53,6 +53,7 @@ public class Application {
 
 	public GroupMembership group;
 	public static String hostaddress = "";
+	public static boolean verbose = true;
 
 
 	
@@ -209,6 +210,9 @@ public class Application {
 				else if ("l".equals(input.trim())) {
 					System.out.println("Leaving group by choice.");
 					leaveGroup();
+				}
+				else if("v".equals(input.trim())) {
+					Application.verbose = Application.verbose == true ? false : true;
 				}
 				// Exit
 				else if ("e".equals(input.trim())) {

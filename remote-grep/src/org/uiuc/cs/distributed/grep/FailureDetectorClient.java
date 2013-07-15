@@ -152,7 +152,8 @@ public class FailureDetectorClient{
 								if(timeSinceReceived > (2 * Application.timeBoundedFailureInMilli))
 								{
 									Application.LOGGER.warning("FailureDetectorClient - run() - determined we are the leader");
-									System.out.println("Determined we are the leader");
+									if(Application.verbose)
+										System.out.println("Determined we are the leader");
 									sendCoordinator = true;
 								}
 							}
@@ -241,7 +242,8 @@ public class FailureDetectorClient{
 						}
 						
 						try {
-							System.out.println("Sending heartbeat to :"+node.getIP());
+							if(Application.verbose)
+								System.out.println("Sending heartbeat to :"+node.getIP());
 							sendData(target,"HEARTBEAT");
 						} catch (IOException e) {
 							e.printStackTrace();

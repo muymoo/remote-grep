@@ -272,7 +272,8 @@ public class FailureDetectorServer {
 						
 						// check to see how the sending node ranks to our node
 						Node sendingNode = new Node(packet.getAddress().getHostAddress(),Application.UDP_FD_PORT);
-						System.out.println("Received election message from: "+sendingNode.getIP());
+						if(Application.verbose)
+							System.out.println("Received election message from: "+sendingNode.getIP());
 						Node self = null;
 						synchronized(Application.getInstance().group)
 						{
@@ -304,13 +305,15 @@ public class FailureDetectorServer {
 						FailureDetectorClient.receivedAnswerMessage(new Date().getTime());
 						
 						String sendingNodeIP = packet.getAddress().getHostAddress();
-						System.out.println("Received answer message from: "+sendingNodeIP);
+						if(Application.verbose)
+							System.out.println("Received answer message from: "+sendingNodeIP);
 						Application.LOGGER.info("FailureDetectorServer - producer.run() - received answer message from: "+sendingNodeIP);
 					} else if(data.equals("COORDINATOR")) {
 						
 						// new leader is elected
 						String sendingNodeIP = packet.getAddress().getHostAddress();
-						System.out.println("Received coordinator message from: "+sendingNodeIP);
+						if(Application.verbose)
+							System.out.println("Received coordinator message from: "+sendingNodeIP);
 						boolean result = Application.getInstance().group.receivedCoordinatorMessage(new Node(sendingNodeIP,Application.UDP_FD_PORT));
 						
 						if(result)
