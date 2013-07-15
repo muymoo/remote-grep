@@ -10,8 +10,9 @@ public class GroupMembership {
 	
 	private int selfIndex = 0;
 	private String selfIP;
+	private String leaderIP;
 	private int leaderIndex = 0;
-	private boolean electionInProgress = false;
+	public boolean electionInProgress = true;
 	
 	
 	public GroupMembership(String _selfIP) {
@@ -43,6 +44,14 @@ public class GroupMembership {
 		return list;
 	}
 	
+	public void resetLastUpdated()
+	{
+		for(int i=0;i<this.list.size();i++)
+		{
+			this.list.get(i).lastUpdatedTimestamp = -1;
+		}
+	}
+	
 	/**
 	 * get the nodes that are ranked lower than this node
 	 * 
@@ -68,24 +77,46 @@ public class GroupMembership {
 	
 	public Node getLeader()
 	{
-		// TODO: implement leader logic
+		/*
 		for(int i=0;i<this.list.size();i++) {
-			if(this.list.get(i).getIP().equals(Application.LINUX_5))
+			if(this.list.get(i).getIP().equals(Application.INTRODUCER_IP))
 			{
 				return this.list.get(i);
 			}
 		}
 		return null;
+*/
+		
+		if(!this.electionInProgress)
+		{
+			return this.list.get(leaderIndex);
+		}
+		return null;
+		
 	}
 	
 	public boolean isLeader()
 	{
-		if(Application.hostaddress.equals(Application.LINUX_5))
+		/*if(Application.hostaddress.equals(Application.INTRODUCER_IP))
+		{
+			return true;
+		}
+		return false;
+		*/
+		if(!this.electionInProgress && 
+			this.getSelfIndex() == this.leaderIndex)
 		{
 			return true;
 		}
 		return false;
 	}
+	
+	public void setSelfAsLeader()
+	{
+		this.leaderIndex = this.selfIndex;
+		this.electionInProgress = false;
+	}
+
 	
 	/**
 	 * return a list of all nodes except this one
@@ -108,6 +139,20 @@ public class GroupMembership {
 			}
 		}
 		return list;
+	}
+	
+	public boolean receivedCoordinatorMessage(Node node)
+	{
+		for(int i=0;i<this.list.size();i++)
+		{
+			if(node.getIP().equals(this.list.get(i).getIP()))
+			{
+				this.leaderIndex = i;
+				this.electionInProgress = false;
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	/**
@@ -158,7 +203,7 @@ public class GroupMembership {
 	{
 		if(this.list.size() == 0)
 		{
-			return -1;
+			return 0;
 		} else {
 			for(int i=0;i<this.list.size();i++)
 			{
@@ -168,8 +213,9 @@ public class GroupMembership {
 				}
 			}
 		}
-		return -1;
+		return 0;
 	}
+
 	
 	/**
 	 * return the node that corresponds to the machine this process
@@ -192,9 +238,25 @@ public class GroupMembership {
 		if(node.isValid() &&
 				!this.list.contains(node))
 		{
+			Node leaderNode = null;
+			if(!this.electionInProgress && this.list.size() > 1)
+				leaderNode = getLeader();
+			
 			this.list.add(node);
 			Collections.sort(this.list);
 			this.selfIndex = getSelfIndex();
+			
+			
+			if(leaderNode != null)
+			{
+				for(int i=0;i<this.list.size();i++)
+				{
+					if(this.list.get(i).getIP().equals(leaderNode.getIP()))
+					{
+						this.leaderIndex = i;
+					}
+				}
+			}
 		}
 	}
 	
@@ -202,6 +264,21 @@ public class GroupMembership {
 	{
 		if(this.list.contains(node))
 		{
+			Node leaderNode = getLeader();
+			if(leaderNode != null)
+			{
+				if(node.getIP().equals(leaderNode.getIP()))
+				{
+					this.electionInProgress = true;
+				}
+				for(int i=0;i<this.list.size();i++)
+				{
+					if(this.list.get(i).getIP().equals(leaderNode.getIP()))
+					{
+						this.leaderIndex = i;
+					}
+				}
+			}
 			this.list.remove(node);
 			this.selfIndex = getSelfIndex();
 		}
@@ -216,6 +293,10 @@ public class GroupMembership {
 			if(i==this.selfIndex)
 			{
 				sb.append("(self)");
+			}
+			if(!this.electionInProgress && i==this.leaderIndex)
+			{
+				sb.append("(leader)");
 			}
 			sb.append(this.list.get(i).toString());
 			if(i!=(this.list.size()-1))

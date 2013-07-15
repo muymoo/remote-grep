@@ -38,7 +38,7 @@ public class FailureDetectorServer {
 					Application.UDP_FD_PORT);
 		}
 		
-		heartbeatQueue = new ArrayBlockingQueue<Node>(6);
+		heartbeatQueue = new ArrayBlockingQueue<Node>(30);
 		producer = new Thread(new HeartbeatProducer());
 		consumer = new Thread(new HeartbeatConsumer());
 		producer.start();
@@ -74,11 +74,110 @@ public class FailureDetectorServer {
 	 */
 	public class HeartbeatConsumer implements Runnable
 	{
+
+		
+		public HeartbeatConsumer()
+		{
+		}
+
+		
+		private List<Node> processQueue()
+		{
+			
+			// creating a local copy of the queue elements to avoid a deadlock situation
+			// with nested synchronized statements
+			List<Node> heartbeatsToProcess = new ArrayList<Node>();
+			synchronized(heartbeatQueue)
+			{
+				while(heartbeatQueue.size() > 0)
+				{
+					Node temp = heartbeatQueue.remove();
+					heartbeatsToProcess.add(temp);
+				}
+			}
+			
+			return heartbeatsToProcess;
+		}
+		
+		private void detectFailures(List<Node> heartbeatsToProcess)
+		{
+			// iterate over other group members to detect failures
+			long currTime = new Date().getTime();
+			synchronized(Application.getInstance().group.list)
+			{				
+				Node node = Application.getInstance().group.getHeartbeatReceiveNode();
+				
+				if(node != null)
+				{
+					// process heartbeat queue updates
+					int equalsComparisons = 0;
+					for(Node updateNode : heartbeatsToProcess)
+					{
+						if(updateNode.equals(node))
+						{
+							equalsComparisons++;
+							if(updateNode.lastUpdatedCompareTo(node) > 0)
+							{
+								node.lastUpdatedTimestamp = updateNode.lastUpdatedTimestamp;
+							}
+						}
+					}
+					if(equalsComparisons != heartbeatsToProcess.size())
+					{
+						Application.LOGGER.warning("FailureDetectorServer - consumer.run() - some of the heartbeats in the queue didn't match the membership list");
+					}
+					
+					// detect failures
+					if(node.lastUpdatedTimestamp > 0)
+					{
+						if((node.lastUpdatedTimestamp+Application.timeBoundedFailureInMilli) <
+								currTime)
+						{
+							Application.LOGGER.info(new Date().getTime()+" RQ1: FailureDetectorServer - run() - failure detected at node: "+ node.verboseToString());
+
+							System.out.println(new Date().getTime()+" failure detected at node: "+node.verboseToString());
+							
+							try {
+								// Notify others that node has been removed.
+								broadcast(node, "R");
+							} catch (UnknownHostException e) {
+								e.printStackTrace();
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							
+							// remove from list
+							Application.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
+							System.out.println("Removing node: "+node.toString());
+							// Remove node from list
+							Application.getInstance().group.remove(node);
+						}
+					}
+			    }
+			}
+		}
+	
 		@Override
 		public void run() {
 			Application.LOGGER.info("FailureDetectorServer - consumer.run() - starting consumer");
 			while(!Thread.currentThread().isInterrupted())
 			{
+				// check if a leader election is in progress
+				boolean electionInProgress = false;
+				synchronized(Application.getInstance().group.list)
+				{
+					electionInProgress = Application.getInstance().group.electionInProgress;
+				}
+				if(!electionInProgress)
+				{
+					// no election is in progress
+					List<Node> heartbeatsToProcess = processQueue();
+					detectFailures(heartbeatsToProcess);
+				} else {
+					processQueue();
+					Application.getInstance().group.resetLastUpdated();
+				}
+				
 				// sleep 2.5 seconds
 				long start = new Date().getTime();
 				long end = start;
@@ -90,73 +189,6 @@ public class FailureDetectorServer {
 						return;
 					}
 					end = new Date().getTime();
-				}
-				
-				// creating a local copy of the queue elements to avoid a deadlock situation
-				// with nested synchronized statements
-				List<Node> heartbeatsToProcess = new ArrayList<Node>();
-				synchronized(heartbeatQueue)
-				{
-					while(heartbeatQueue.size() > 0)
-					{
-						Node temp = heartbeatQueue.remove();
-						heartbeatsToProcess.add(temp);
-					}
-				}
-				
-				// iterate over other group members to detect failures
-				long currTime = new Date().getTime();
-				synchronized(Application.getInstance().group.list)
-				{				
-					Node node = Application.getInstance().group.getHeartbeatReceiveNode();
-					
-					if(node != null)
-					{
-						// process heartbeat queue updates
-						int equalsComparisons = 0;
-						for(Node updateNode : heartbeatsToProcess)
-						{
-							if(updateNode.equals(node))
-							{
-								equalsComparisons++;
-								if(updateNode.lastUpdatedCompareTo(node) > 0)
-								{
-									node.lastUpdatedTimestamp = updateNode.lastUpdatedTimestamp;
-								}
-							}
-						}
-						if(equalsComparisons != heartbeatsToProcess.size())
-						{
-							Application.LOGGER.warning("FailureDetectorServer - consumer.run() - some of the heartbeats in the queue didn't match the membership list");
-						}
-						
-						// detect failures
-						if(node.lastUpdatedTimestamp > 0)
-						{
-							if((node.lastUpdatedTimestamp+Application.timeBoundedFailureInMilli) <
-									currTime)
-							{
-								Application.LOGGER.info(new Date().getTime()+" RQ1: FailureDetectorServer - run() - failure detected at node: "+ node.verboseToString());
-
-								System.out.println(new Date().getTime()+" failure detected at node: "+node.verboseToString());
-								
-								try {
-									// Notify others that node has been removed.
-									broadcast(node, "R");
-								} catch (UnknownHostException e) {
-									e.printStackTrace();
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-								
-								// remove from list
-								Application.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
-								System.out.println("Removing node: "+node.toString());
-								// Remove node from list
-								Application.getInstance().group.remove(node);
-							}
-						}
-				    }
 				}
 			}
 		}
@@ -228,12 +260,96 @@ public class FailureDetectorServer {
 							Application.LOGGER.info("FailureDetectorServer - producer.run() - received heartbeat from node: "+heartbeatNode.getIP());
 						}
 					}
+					else if(data.equals("ELECTION"))
+					{
+						Application.LOGGER.info("FailureDetectorServer - producer.run() - received ELECTION message");
+						
+						// set global election status
+						synchronized(Application.getInstance().group)
+						{
+							Application.getInstance().group.electionInProgress = true;
+						}
+						
+						// check to see how the sending node ranks to our node
+						Node sendingNode = new Node(packet.getAddress().getHostAddress(),Application.UDP_FD_PORT);
+						System.out.println("Received election message from: "+sendingNode.getIP());
+						Node self = null;
+						synchronized(Application.getInstance().group)
+						{
+							self = Application.getInstance().group.getSelfNode();
+						}
+						if(self.compareTo(sendingNode) > 0)
+						{
+							// send reply
+							InetAddress target = null;
+							try {
+								target = InetAddress.getByName(sendingNode.getIP());
+							} catch (UnknownHostException e) {
+								e.printStackTrace();
+							}
+							
+							try {
+								sendData(target,"ANSWER");
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						} else if(self.compareTo(sendingNode) < 0)
+						{
+							// dont send reply
+						} else {
+							Application.LOGGER.warning("FailureDetectorServer - producer.run() - received election message from self.");
+						}
+					} else if(data.equals("ANSWER")) {
+						// mark that an answer message has been received
+						FailureDetectorClient.receivedAnswerMessage(new Date().getTime());
+						
+						String sendingNodeIP = packet.getAddress().getHostAddress();
+						System.out.println("Received answer message from: "+sendingNodeIP);
+						Application.LOGGER.info("FailureDetectorServer - producer.run() - received answer message from: "+sendingNodeIP);
+					} else if(data.equals("COORDINATOR")) {
+						
+						// new leader is elected
+						String sendingNodeIP = packet.getAddress().getHostAddress();
+						System.out.println("Received coordinator message from: "+sendingNodeIP);
+						boolean result = Application.getInstance().group.receivedCoordinatorMessage(new Node(sendingNodeIP,Application.UDP_FD_PORT));
+						
+						if(result)
+						{
+							Application.LOGGER.info("FailureDetectorServer - producer.run() - received coordinator message from: "+sendingNodeIP);
+						} else {
+							Application.LOGGER.warning("FailureDetectorServer - producer.run() - received coordinator message from node not in list!: "+sendingNodeIP);
+						}
+					}
 				} catch (UnsupportedEncodingException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 		}
+		
+		
+	    private void sendData(InetAddress target, String data) throws IOException{
+	    	DatagramSocket datagramSocket = null;
+			// get a datagram socket
+			try {
+				datagramSocket = new DatagramSocket();
+			} catch (SocketException e) {
+				e.printStackTrace();
+			}
+    		if(!FailureDetectorClient.isRandomFailure())
+    		{
+	    		// generate random number to determine whether or  not to drop the packet
+		    	if(data.getBytes("utf-8").length > 256) {
+		    		Application.LOGGER.info("FailureDetectorServer - sendData - string data is too long");
+		    		throw new IOException("string data is too long");
+		    	}
+		        DatagramPacket datagram = new DatagramPacket(data.getBytes("utf-8"), data.length(), target, Application.UDP_FD_PORT);
+		        datagramSocket.send(datagram);
+				Application.LOGGER.info(new Date().getTime() +" FailureDetectorServer - producer.run() - Sending message: "+data);
+    		} else {
+				Application.LOGGER.info(new Date().getTime() +" FailureDetectorServer - producer.run() - \""+data+"\" message dropped!");
+    		}
+	    }
 		
 	}
 	

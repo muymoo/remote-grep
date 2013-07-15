@@ -9,7 +9,7 @@ all:
 # the main driver for the program
 # needs to be run on each node
 run:
-	java -cp bin org.uiuc.cs.distributed.grep.Application
+	java -cp bin org.uiuc.cs.distributed.grep.Application /home/ebowlin2/mp3
 
 # this target runs the unit tests
 # The other two nodes need to be up and running before unit tests can run ('make run' on those severs first)

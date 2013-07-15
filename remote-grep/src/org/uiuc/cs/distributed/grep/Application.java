@@ -30,28 +30,28 @@ import java.util.logging.SimpleFormatter;
  */
 public class Application {
 	public static String logLocation = "";
-	public static final int TCP_PORT = 4444;
-	public static final int UDP_PORT = 4445;
-	public static final int UDP_MC_PORT = 4446;
-	public static final int UDP_FD_PORT = 4447; // port for failure detection
-	public static final int TCP_SDFS_PORT = 4448; // SDFS put, get, delete
-	public static final String UDP_MC_GROUP = "228.5.6.7";
+	public static final int TCP_PORT = 4456;
+	public static final int UDP_PORT = 4457;
+	public static final int UDP_MC_PORT = 4458;
+	public static final int UDP_FD_PORT = 4459; // port for failure detection
+	public static final int TCP_SDFS_PORT = 4450; // SDFS put, get, delete
+	public static final String UDP_MC_GROUP = "228.6.7.8";
 	public static final int timeBoundedFailureInMilli = 5000;
 	public static Logger LOGGER;
 
 	private static Handler logFileHandler;
 	private static Application instance = null;
 	private GrepServer grepServer;
-	private GroupServer groupServer;
-	private static GroupClient groupClient;
+	public GroupServer groupServer;
+	public GroupClient groupClient;
 	public DistributedFileSystemServer dfsServer;
 	public DistributedFileSystemClient dfsClient;
 	private FailureDetectorServer failureDetectorServer;
 	private FailureDetectorClient failureDetectorClient;
 	public ArrayList<GrepTask> grepTasks;
 	public GrepTask taskToStopServer;
-	public static final String LINUX_5 = "130.126.112.148";
-	private static String[] servers = new String[] { LINUX_5 + ":" + TCP_PORT,
+	public static final String INTRODUCER_IP = "130.126.112.148";
+	private static String[] servers = new String[] { INTRODUCER_IP + ":" + TCP_PORT,
 			"130.126.112.146:4444", "130.126.112.117:4444" };
 
 	public GroupMembership group;
@@ -128,6 +128,7 @@ public class Application {
 		this.failureDetectorClient = new FailureDetectorClient();
 		this.grepServer = new GrepServer();
 		this.groupServer = new GroupServer();
+		this.groupClient = new GroupClient();
 		this.dfsServer = new DistributedFileSystemServer();
 		this.dfsClient = new DistributedFileSystemClient();
 	}
@@ -150,7 +151,7 @@ public class Application {
 			LOGGER.warning("Application - run() - failed to identify host");
 		}
 		// If this is the introducer node, start listening for incoming requests
-		if (hostaddress.equals(LINUX_5)) {
+		if (hostaddress.equals(INTRODUCER_IP)) {
 			synchronized (group) {
 				//joinGroup();
 				
@@ -158,14 +159,9 @@ public class Application {
 				Node newNode = new Node(System.currentTimeMillis(),
 						hostaddress, Integer.valueOf(UDP_PORT));
 				group.add(newNode);
-
-				startGroupServer();
-				LOGGER.info("Application - run() - Listening for join requests.");
-				System.out
-						.println("Group Server started. Listening for join requests.");
-
-			}			
+			}
 		}
+		startGroupServer();
 
 		InputStreamReader inputStreamReader = new InputStreamReader(System.in);
 		BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
@@ -188,7 +184,7 @@ public class Application {
 				else if ("j".equals(input.trim())) {
 					if (!group.list.contains(new Node(System
 							.currentTimeMillis(), hostaddress, 4445))) {
-						joinGroup();
+						groupServer.joinGroup();
 					} else {
 						System.out.println("Node " + hostaddress
 								+ " is already part of the group.");
@@ -328,14 +324,6 @@ public class Application {
 	}
 
 	/**
-	 * Start client that joins the membership group
-	 */
-	public void joinGroup() {
-		groupClient = new GroupClient(new Node(LINUX_5 + ":" + UDP_PORT));
-		groupClient.start();
-	}
-
-	/**
 	 * Voluntarily leave the group. This method notifies other nodes that it is
 	 * leaving so they can quickly remove them from their list.
 	 */
@@ -420,6 +408,7 @@ public class Application {
 	 */
 	public void startGroupServer() {
 		groupServer.start();
+		groupClient.start();
 	}
 
 	/**
@@ -449,6 +438,7 @@ public class Application {
 	 * sever thread to complete.
 	 */
 	public void stopGrepServer() {
+		/*
 		taskToStopServer = new GrepTask(new Node("localhost", 4444));
 		taskToStopServer.setRegex("<QUIT>");
 		taskToStopServer.start();
@@ -463,7 +453,7 @@ public class Application {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 			LOGGER.warning("Application - stopGrepServer - interrupted while joining processing threads.");
-		}
+		}*/
 	}
 
 	public static void printUsage() {

@@ -9,7 +9,7 @@ import org.uiuc.cs.distributed.grep.Application;
 
 public class PortTester {
 
-	private static int initial_port = 4448;
+	private static int initial_port = 4444;
 	/**
 	 * @param args
 	 */
