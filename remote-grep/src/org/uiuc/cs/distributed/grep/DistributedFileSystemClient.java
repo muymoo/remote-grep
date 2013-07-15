@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class DistributedFileSystemClient {
-    private Map<String,String> fileMap; // Key: SDFS Path, Value: local path
+    public Map<String,String> fileMap; // Key: SDFS Path, Value: local path
     private Socket clientSocket = null;
     
     public DistributedFileSystemClient()
