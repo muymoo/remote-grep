@@ -149,12 +149,14 @@ public class FailureDetectorServer {
 							// remove from list
 							Application.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
 							System.out.println("Removing node: "+node.toString());
-							// Remove node from list
-							Application.getInstance().group.remove(node);
+							
+							
 							if(Application.getInstance().group.isLeader())
 							{
 								Application.getInstance().dfsServer.removeFailedNodeEntries(node);
 							}
+							// Remove node from list
+							Application.getInstance().group.remove(node);
 						}
 					}
 			    }
