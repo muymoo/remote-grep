@@ -277,8 +277,10 @@ public class Application {
 				}
 				else if ("x".equals(input.trim()))
 				{
-					System.out.println("GlobalFileMap: ");
+					System.out.println("GlobalFileMap: "); 
 					System.out.println(dfsServer.globalFileMap.toString());
+					System.out.println("Local File Map: ");
+					System.out.println(dfsClient.fileMap.toString());
 				}
 			} catch (IOException e) {
 				LOGGER.warning("Application - run() - failed to readline from the input");
