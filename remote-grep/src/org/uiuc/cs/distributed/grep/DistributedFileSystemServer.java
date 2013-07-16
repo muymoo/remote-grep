@@ -220,6 +220,15 @@ class DistributedFileSystemServer extends Thread {
      */
     public String whereput(String SDFS_Key, String puttingNodeIP)
     {
+    	synchronized(globalFileMap)
+    	{
+    		if(globalFileMap.containsKey(SDFS_Key) &&
+    			globalFileMap.get(SDFS_Key).size() == 2)
+    		{
+    			System.out.println("whereput: key is already stored at two nodes");
+    			return "";
+    		}
+    	}
         //check the DistributedFileSystemClient map for the sdfs key
         synchronized(Application.getInstance().group.list)
         {
@@ -277,10 +286,11 @@ class DistributedFileSystemServer extends Thread {
     
     void populateGlobalFileMap()
     {
+    	/*
     	synchronized(globalFileMap)
     	{
     		globalFileMap.clear();
-    	}
+    	}*/
     	
     	long start = new Date().getTime();
          // add contents of local file to global map
@@ -289,7 +299,25 @@ class DistributedFileSystemServer extends Thread {
              nodes.add(Application.getInstance().group.getSelfNode());
              synchronized(globalFileMap)
              {
-            	 globalFileMap.put(sdfs_key, nodes);
+            	 if(!globalFileMap.containsKey(sdfs_key))
+            	 {
+            		 globalFileMap.put(sdfs_key, nodes);
+            	 } else {
+            		 boolean alreadyAdded = false;
+            		 Set<Node> currentNodes = globalFileMap.get(sdfs_key);
+            		 for(Node node : currentNodes )
+            		 {
+            			 if(node.getIP().equals(Application.hostaddress))
+            			 {
+            				 alreadyAdded = true;
+            			 }
+            		 }
+            		 if(!alreadyAdded)
+            		 {
+            			 currentNodes.add(Application.getInstance().group.getSelfNode());
+            			 globalFileMap.put(sdfs_key, currentNodes);
+            		 }
+            	 }
              }
          }
          
@@ -320,7 +348,20 @@ class DistributedFileSystemServer extends Thread {
 							nodes.add(node);
 							globalFileMap.put(curr_sdfs_key, nodes);
 						} else {
-							globalFileMap.get(curr_sdfs_key).add(node);
+							Set<Node> nodes = globalFileMap.get(curr_sdfs_key);
+							boolean foundNode = false;
+							for(Node currNode : nodes)
+							{
+								if(currNode.getIP().equals(node.getIP()))
+								{
+									foundNode = true;
+								}
+							}
+							if(!foundNode)
+							{
+								nodes.add(node);
+								globalFileMap.put(curr_sdfs_key, nodes);
+							}
 						}
 					}
 				}
@@ -328,7 +369,7 @@ class DistributedFileSystemServer extends Thread {
 				in.close();
 				cSocket.close();
 				
-				searchForReplication();
+				searchForReplication(true);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -337,15 +378,13 @@ class DistributedFileSystemServer extends Thread {
     	System.out.println("Populated global file map took "+time+"ms");
     }
     
-    public void searchForReplication() throws IOException
+    public void searchForReplication(boolean doPut) throws IOException
     {
-    	System.out.println("Entering searchForReplication");
 
     	
         Map<String,String> ipMessagePairs = new HashMap<String,String>();
         synchronized(globalFileMap)
         {
-        	System.out.println("globalFileMap: "+globalFileMap.toString());
 	        // search for files that need to be replicated
 	        for(String key : globalFileMap.keySet())
 	        {
@@ -355,12 +394,13 @@ class DistributedFileSystemServer extends Thread {
 	            }
 	            else if(globalFileMap.get(key).size() == 1)
 	            {
-	            	System.out.println("Found key that needs replicating");
-	            	System.out.println(globalFileMap.get(key).toString());
 	                Iterator<Node> it = globalFileMap.get(key).iterator();
 	    		    Node node = it.next();
-	    		    System.out.println("Node found: "+node.getIP());
-	                ipMessagePairs.put(key,node.getIP());
+	    		    System.out.println("Replicating Key"+key);
+	    		    if(doPut)
+	    		    {
+	    		    	ipMessagePairs.put(key,node.getIP());
+	    		    }
 	                
 	            } else if(globalFileMap.get(key).size() > 2)
 	            {
@@ -369,7 +409,6 @@ class DistributedFileSystemServer extends Thread {
 	        }
         }
         
-        System.out.println("global File map after search: "+globalFileMap.toString());
         
         for(String key : ipMessagePairs.keySet())
         {
@@ -412,8 +451,7 @@ class DistributedFileSystemServer extends Thread {
 		            }
 		        }
 	        }
-	        
-	        searchForReplication();
+	        searchForReplication(true);
 	        
     	} catch (IOException e) {
     		e.printStackTrace();

@@ -119,13 +119,16 @@ public class DistributedFileSystemClient {
 	            clientSocket.close();
 	        }
 	        
-	        clientSocket = new Socket(ipToPlaceFile,Application.TCP_SDFS_PORT);
-	        
-	        // Setup our input and output streams
-	        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-	        out.println("put:"+sdfsKey);
-	        
-	        sendFileToNode(fileMap.get(sdfsKey));
+	        if(!ipToPlaceFile.equals(""))
+	        {
+		        clientSocket = new Socket(ipToPlaceFile,Application.TCP_SDFS_PORT);
+		        
+		        // Setup our input and output streams
+		        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+		        out.println("put:"+sdfsKey);
+		        
+		        sendFileToNode(fileMap.get(sdfsKey));
+		    }
 	        
     	} catch (IOException e) {
     		e.printStackTrace();
@@ -279,7 +282,6 @@ public class DistributedFileSystemClient {
                 while ((number = fileInputStream.read(buffer)) != -1) {
                         try {
                                 socketOutputStream.write(buffer, 0, number);
-                                System.out.println("write: " + buffer.toString());
                         } catch (IOException e) {
                                 // TODO Auto-generated catch block
                                 e.printStackTrace();

@@ -274,7 +274,13 @@ public class GroupMembership {
 			{
 				if(node.getIP().equals(leaderNode.getIP()))
 				{
-					this.electionInProgress = true;
+					if(this.list.size() == 2)
+					{
+						// we are the new leader
+						setSelfAsLeader();
+					} else {
+						this.electionInProgress = true;
+					}
 				}
 			}
 			this.list.remove(node);

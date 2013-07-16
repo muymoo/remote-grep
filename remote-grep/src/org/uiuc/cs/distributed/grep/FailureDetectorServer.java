@@ -135,7 +135,7 @@ public class FailureDetectorServer {
 						{
 							Application.LOGGER.info(new Date().getTime()+" RQ1: FailureDetectorServer - run() - failure detected at node: "+ node.verboseToString());
 
-							System.out.println(new Date().getTime()+" failure detected at node: "+node.verboseToString());
+							System.out.println("Failure detected at node: "+node.verboseToString());
 							
 							try {
 								// Notify others that node has been removed.
@@ -148,7 +148,6 @@ public class FailureDetectorServer {
 							
 							// remove from list
 							Application.LOGGER.info(" RQ1: FailureDetectorServer - run() - removing failed node.");
-							System.out.println("Removing node: "+node.toString());
 							
 							
 							if(Application.getInstance().group.isLeader())
