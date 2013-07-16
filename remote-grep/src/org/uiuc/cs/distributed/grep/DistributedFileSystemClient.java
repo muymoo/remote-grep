@@ -102,7 +102,7 @@ public class DistributedFileSystemClient {
 	        String ipToPlaceFile="";
 	        if(Application.getInstance().group.isLeader())
 	        {
-	            ipToPlaceFile = Application.getInstance().dfsServer.whereput(sdfsKey, Application.getInstance().group.getSelfNode().getIP());
+	            ipToPlaceFile = Application.getInstance().dfsServer.whereput(sdfsKey, Application.hostaddress);
 	        } 
 	        else 
 	        {

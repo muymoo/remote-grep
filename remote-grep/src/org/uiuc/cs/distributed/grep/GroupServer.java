@@ -59,12 +59,12 @@ public class GroupServer extends Thread {
 					joinedGroup = true;
 
 					// receive join request
-					System.out.println("Waiting to recieve join requests. (e) to exit");
+					System.out.println("Waiting to recieve join requests.");
 					
 					DatagramPacket packet = new DatagramPacket(buf, buf.length);
 					socket.receive(packet);
 					String timestamp = new String (packet.getData(), 0, packet.getLength(), "UTF-8");
-					System.out.println("timestamp: "+timestamp);
+
 					// Add node to group list				
 					Application.LOGGER.info("RQ1: GroupServer - run() - Join request recieved");
 					Node newNode=null;
@@ -200,7 +200,6 @@ public class GroupServer extends Thread {
 			Application.getInstance().group.remove(oldNode);
 		}
 		Application.LOGGER.info("RQ1: GroupServer - removeNode() - Old node removed successfully: " + oldNode);
-		System.out.println("Everyone should remove: " + oldNode);
 		
 		try {
 			broadcast(oldNode, "R");
@@ -262,7 +261,6 @@ public class GroupServer extends Thread {
 					buf = addNodeMessage.getBytes();
 					DatagramPacket addNodePacket = new DatagramPacket(buf, buf.length, address,
 							Application.UDP_PORT);
-					System.out.println("Sending: " + addNodeMessage);
 					socket.send(addNodePacket);
 				}
 			}
@@ -270,7 +268,6 @@ public class GroupServer extends Thread {
 
 		if(!FailureDetectorClient.isRandomFailure())
 		{
-			System.out.println("Sending END packet");
 			String endMessage = "END";
 			buf = endMessage.getBytes();
 			DatagramPacket endPacket = new DatagramPacket(buf, buf.length, address,

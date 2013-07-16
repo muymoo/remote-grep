@@ -108,19 +108,8 @@ class DistributedFileSystemServer extends Thread {
 	            } 
 	            else if(command.equals("whereput")) 
 	            {
-	                // add to masterFileMap key:sdfs_key value: += requestingNode
-	            	Set<Node> nodes = new HashSet<Node>();
-	            	nodes.add(new Node(clientSocket.getInetAddress().getHostAddress(),Application.TCP_SDFS_PORT));
-	                synchronized(globalFileMap)
-	                {
-	                	globalFileMap.put(sdfs_key, nodes);
-	                }
 	                // Where are we going to replicate this node since we've already stored it locally?
 	                String nodeToPutIP = whereput(sdfs_key, clientSocket.getInetAddress().getHostAddress());
-	                synchronized(globalFileMap)
-	                {
-	                	globalFileMap.get(sdfs_key).add(new Node(nodeToPutIP, Application.TCP_SDFS_PORT)); // Add replicated node
-	                }
 	                System.out.println("whereput: "+nodeToPutIP);
 	                out.println(nodeToPutIP);
 	            } 
@@ -219,29 +208,45 @@ class DistributedFileSystemServer extends Thread {
      * @returns String - ip of the node to put the file
      */
     public String whereput(String SDFS_Key, String puttingNodeIP)
-    {
+    {   
     	synchronized(globalFileMap)
     	{
-    		if(globalFileMap.containsKey(SDFS_Key) &&
-    			globalFileMap.get(SDFS_Key).size() == 2)
+    		if(globalFileMap.containsKey(SDFS_Key))
     		{
-    			System.out.println("whereput: key is already stored at two nodes");
-    			return "";
+    			if(globalFileMap.get(SDFS_Key).size() == 2)
+	    		{
+	    			System.out.println("whereput: key is already stored at two nodes");
+	    			return "";
+	    		}
+    			Set<Node> nodes = globalFileMap.get(SDFS_Key);
+    			nodes.add(new Node(puttingNodeIP,Application.TCP_SDFS_PORT));
+    			globalFileMap.put(SDFS_Key, nodes);
+    		} else {
+    			// add to masterFileMap key:sdfs_key value: += requestingNode
+    	    	Set<Node> nodes = new HashSet<Node>();
+    	    	nodes.add(new Node(puttingNodeIP,Application.TCP_SDFS_PORT));
+    	    	globalFileMap.put(SDFS_Key, nodes);
     		}
     	}
         //check the DistributedFileSystemClient map for the sdfs key
+    	String ipToPut = "";
         synchronized(Application.getInstance().group.list)
         {
 	        // Find a different node then the requesting node
 	        for(Node node : Application.getInstance().group.list) {
 	            if(!node.getIP().equals(puttingNodeIP))
 	            {
-	                return node.getIP(); // put it to this node
+	            	ipToPut = node.getIP(); // put it to this node
 	            }
 	        }
-	        System.out.println("didnt identify a node");
-	        return "";
         }
+        synchronized(globalFileMap)
+        {
+        	Set<Node> nodes = globalFileMap.get(SDFS_Key);
+        	nodes.add(new Node(ipToPut,Application.TCP_SDFS_PORT));
+        	globalFileMap.put(SDFS_Key, nodes);
+        }
+        return ipToPut;
     }
     
 	/**

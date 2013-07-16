@@ -240,7 +240,6 @@ public class Application {
 				// Put a file on the sdfs
 				else if(input.startsWith("put "))
 				{
-					System.out.println("Input starts with put, send file.");
 					String[] putCommand = input.split(" ");
 					if(putCommand.length != 3)
 					{
@@ -255,7 +254,6 @@ public class Application {
 				}
 				else if(input.startsWith("get "))
 				{
-					System.out.println("Input starts with get, receive file.");
 					String[] putCommand = input.split(" ");
 					if(putCommand.length != 3)
 					{
