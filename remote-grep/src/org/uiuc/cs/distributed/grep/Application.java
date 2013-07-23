@@ -26,6 +26,7 @@ import java.util.logging.SimpleFormatter;
  */
 public class Application {
 	public static String logLocation = "";
+	public static String SDFS_DIR = "/tmp/momont2/sdfs/files";
 	public static final int TCP_PORT = 4461;
 	public static final int UDP_PORT = 4462;
 	public static final int UDP_MC_PORT = 4463;
@@ -35,6 +36,7 @@ public class Application {
 
 	public static final int timeBoundedFailureInMilli = 5000;
 	public static Logger LOGGER;
+	
 
 	private static Handler logFileHandler;
 	private static Application instance = null;

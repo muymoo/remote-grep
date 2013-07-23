@@ -116,7 +116,7 @@ class DistributedFileSystemServer extends Thread {
 	            else if(command.equals("put")) 
 	            {
 	                // We are going to store the put'd file on the local machine here (unique file name)
-	                String fileName = "/tmp/momont2/sdfs/files/data" + new Date().getTime() + ".data";
+	                String fileName = Application.SDFS_DIR+"/data" + new Date().getTime() + ".data";
 	                File localFile = new File(fileName);
 	                
 	    
@@ -290,13 +290,7 @@ class DistributedFileSystemServer extends Thread {
     }
     
     void populateGlobalFileMap()
-    {
-    	/*
-    	synchronized(globalFileMap)
-    	{
-    		globalFileMap.clear();
-    	}*/
-    	
+    {	
     	long start = new Date().getTime();
          // add contents of local file to global map
          for(String sdfs_key : Application.getInstance().dfsClient.getFilesOnNode()) {
