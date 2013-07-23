@@ -32,6 +32,7 @@ public class Application {
 	public static final int UDP_MC_PORT = 4463;
 	public static final int UDP_FD_PORT = 4464; // port for failure detection
 	public static final int TCP_SDFS_PORT = 4465; // SDFS put, get, delete
+	public static final int TCP_MAPLE_PORT = 4466; // Communicate maple commands
 	public static final String UDP_MC_GROUP = "228.6.7.8";
 
 	public static final int timeBoundedFailureInMilli = 5000;
@@ -47,7 +48,7 @@ public class Application {
 	public DistributedFileSystemClient dfsClient;
 	private FailureDetectorServer failureDetectorServer;
 	private FailureDetectorClient failureDetectorClient;
-	private MapleServer mapleServer;
+	private MapleMaster mapleServer;
 	public ArrayList<GrepTask> grepTasks;
 	public GrepTask taskToStopServer;
 	public static final String INTRODUCER_IP = "130.126.112.148";
@@ -289,7 +290,7 @@ public class Application {
 						break;
 					}
 					System.out.println("Starting Maple");
-					mapleServer = new MapleServer(command);
+					mapleServer = new MapleMaster(command);
 					mapleServer.start();
 				}
 				else if ("x".equals(input.trim()))
