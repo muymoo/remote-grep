@@ -47,6 +47,7 @@ public class Application {
 	public DistributedFileSystemClient dfsClient;
 	private FailureDetectorServer failureDetectorServer;
 	private FailureDetectorClient failureDetectorClient;
+	private MapleServer mapleServer;
 	public ArrayList<GrepTask> grepTasks;
 	public GrepTask taskToStopServer;
 	public static final String INTRODUCER_IP = "130.126.112.148";
@@ -279,6 +280,18 @@ public class Application {
 					}
 					dfsClient.delete(putCommand[1]);
 				}
+				else if(input.startsWith("maple "))
+				{
+					String[] command = input.split(" ");
+					if(command.length < 4)
+					{
+						System.out.println("Usage: maple <maple_exe> <int_file_prefix> <sdfs_src_file_1> ... <sdfs_src_file_m>");
+						break;
+					}
+					System.out.println("Starting Maple");
+					mapleServer = new MapleServer(command);
+					mapleServer.start();
+				}
 				else if ("x".equals(input.trim()))
 				{
 					System.out.println("GlobalFileMap: "); 
@@ -323,6 +336,7 @@ public class Application {
 		System.out.println("(q) Query logs");
 		System.out.println("(e) Exit");
 		System.out.println("(put <local_file_name> <sdfs_file_name>)");
+		System.out.println("(maple <maple_exe> <sdfs_intermiedate_prefix> <sdfs_src_file_1> ... <sdfs_src_file_m>");
 	}
 
 	/**
