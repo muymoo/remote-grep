@@ -25,8 +25,10 @@ import java.util.logging.SimpleFormatter;
  * @author evan
  */
 public class Application {
-	public static String logLocation = "";
-	public static String SDFS_DIR = "/tmp/momont2/sdfs/files";
+	private String rootLocation = "";
+	public static String LOG_DIR = "";
+	public static String SDFS_DIR = "";
+	public static String SCRATCH_DIR = "";
 	public static final int TCP_PORT = 4461;
 	public static final int UDP_PORT = 4462;
 	public static final int UDP_MC_PORT = 4463;
@@ -93,16 +95,38 @@ public class Application {
 	 * @param messageFailureRate
 	 *            - a percentage represented as a double in the range [0,1]
 	 */
-	public void configure(String newLogLocation, double messageFailureRate) {
+	public void configure(String newRootDir, double messageFailureRate) {
 		String hostname = "linux5";
 		try {
 			hostname = java.net.InetAddress.getLocalHost().getHostName();
 		} catch (UnknownHostException e1) {
 			// nothing to do in this case
 		}
-		this.logLocation = newLogLocation;
+		
+		// create all necessary folders
+		this.rootLocation = newRootDir;
+		Application.LOG_DIR = this.rootLocation + File.separator+"logs";
+		Application.SDFS_DIR = this.rootLocation + File.separator+"sdfs";
+		Application.SCRATCH_DIR = this.rootLocation + File.separator+"tmp";
+		Process p;
+		boolean completed = false;
+		while(!completed)
+		{
+			try {
+				p = Runtime.getRuntime().exec("mkdir -p "+Application.LOG_DIR+"; mkdir -p "+Application.SDFS_DIR+"; mkdir -p "+Application.SCRATCH_DIR);
+				p.waitFor();
+				completed = true;
+			} catch (IOException e1) {
+				e1.printStackTrace();
+				break;
+			} catch (InterruptedException e) {
+				// swallow exception so that the loop continues and tries again
+			}
+		}
+		
+		
 
-		String logFileLocation = this.logLocation + File.separator + "logs"
+		String logFileLocation = Application.LOG_DIR
 				+ File.separator + "Application."
 				+ hostname.charAt(5) + ".log";
 

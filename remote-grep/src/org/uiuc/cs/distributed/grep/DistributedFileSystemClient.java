@@ -28,6 +28,12 @@ public class DistributedFileSystemClient {
     	fileMap = new HashMap<String,String>();
     }
     
+    public String generateNewFileName(String localFileName)
+    {
+    	String[] parts = localFileName.split(".");
+    	return Application.SDFS_DIR+File.separator+Application.hostaddress+File.separator + new Date().getTime() + "."+parts[parts.length -1];
+    }
+    
     public void get( String sdfsFilePath, String localFileName)
     {
         // Save time by checking locally first
@@ -138,7 +144,7 @@ public class DistributedFileSystemClient {
     
     public void put(String localFile, String sdfsKey){
     	// Add node to local file system before sending to remote nodes for replication.
-    	String fileName = Application.SDFS_DIR+"/data" + new Date().getTime() + ".data";
+    	String fileName = generateNewFileName(localFile);
     	try {
 			copyFile(new File(localFile), new File(fileName));
 		} catch (IOException e) {
@@ -189,8 +195,10 @@ public class DistributedFileSystemClient {
 	            String nodeToDeleteFrom = "";
 	            while( (nodeToDeleteFrom = in.readLine()).equals("<END>"))
 	            {
+	            	System.out.println("wheredelete RESPONSE: "+nodeToDeleteFrom);
 	            	nodesToRemoveFileFrom.add(new Node(nodeToDeleteFrom,0));
 	            }
+	            
 	            
 	            // Cleanup stuff
 	            in.close();
