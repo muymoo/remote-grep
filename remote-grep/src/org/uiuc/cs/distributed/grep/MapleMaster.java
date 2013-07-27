@@ -41,12 +41,12 @@ public class MapleMaster extends Thread {
 	@Override
 	public void run() {
 		putExecutableInSdfs();
+		new MapleCollector().start();
 		distributeMapleJobs();
-		collectMapleResponses();
 
 		// We can then loop through all intermediate prefixes in the global file
 		// map! :) to find output files for juicing.
-		System.out.println("Maple complete.");
+		System.out.println("Maple distributed.");
 	}
 
 	/**
@@ -112,33 +112,6 @@ public class MapleMaster extends Thread {
 			out.close();
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Wait for all nodes to respond
-	 */
-	private void collectMapleResponses() {
-		ServerSocket mapleResponseSocket;
-		try {
-			mapleResponseSocket = new ServerSocket(Application.TCP_MAPLE_PORT);
-
-			Socket clientSocket = mapleResponseSocket.accept();
-
-			BufferedReader in = new BufferedReader(new InputStreamReader(
-					clientSocket.getInputStream()));
-
-			String inputLine;
-
-			while ((inputLine = in.readLine()) != "<END>") {
-				System.out.println("Maple received: " + inputLine);
-			}
-
-			in.close();
-			clientSocket.close();
-			mapleResponseSocket.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
