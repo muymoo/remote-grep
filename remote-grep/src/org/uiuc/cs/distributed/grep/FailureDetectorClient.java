@@ -282,7 +282,6 @@ public class FailureDetectorClient{
 		    	}
 		        DatagramPacket datagram = new DatagramPacket(data.getBytes("utf-8"), data.length(), target, Application.UDP_FD_PORT);
 		        socket.send(datagram);
-				Application.LOGGER.info(new Date().getTime() +" FailureDetectorClient - run() - Sending message: "+data);
     		} else {
 				Application.LOGGER.info(new Date().getTime() +" FailureDetectorClient - run() - \""+data+"\" message dropped!");
     		}

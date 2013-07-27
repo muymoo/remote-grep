@@ -30,8 +30,11 @@ public class DistributedFileSystemClient {
     
     public String generateNewFileName(String localFileName)
     {
-    	String[] parts = localFileName.split(".");
-    	return Application.SDFS_DIR+File.separator+Application.hostaddress+File.separator + new Date().getTime() + "."+parts[parts.length -1];
+    	String[] parts = localFileName.split("[.]");
+    	String fileExtension = ".data";
+    	if(parts.length > 1)
+    		fileExtension = "."+parts[parts.length - 1];
+    	return Application.SDFS_DIR+File.separator+Application.hostaddress+"_"+ new Date().getTime() + fileExtension;
     }
     
     public void get( String sdfsFilePath, String localFileName)
@@ -193,7 +196,7 @@ public class DistributedFileSystemClient {
 	            
 	            // Read in nodes from server
 	            String nodeToDeleteFrom = "";
-	            while( (nodeToDeleteFrom = in.readLine()).equals("<END>"))
+	            while( !(nodeToDeleteFrom = in.readLine()).equals("<END>"))
 	            {
 	            	System.out.println("wheredelete RESPONSE: "+nodeToDeleteFrom);
 	            	nodesToRemoveFileFrom.add(new Node(nodeToDeleteFrom,0));
@@ -259,6 +262,11 @@ public class DistributedFileSystemClient {
         return fileMap.keySet();
     }
     
+    public synchronized boolean hasFile(String sdfs_key)
+    {
+    	return fileMap.containsKey(sdfs_key);
+    }
+    
     public synchronized String getFileLocation(String sdfs_key)
     {
         return fileMap.get(sdfs_key);
@@ -286,7 +294,7 @@ public class DistributedFileSystemClient {
 		}
         
         try {
-                System.out.println("reading in file: " + fileInputStream);
+                System.out.println("sending file: " + fileInputStream);
                 while ((number = fileInputStream.read(buffer)) != -1) {
                         try {
                                 socketOutputStream.write(buffer, 0, number);
@@ -295,6 +303,7 @@ public class DistributedFileSystemClient {
                                 e.printStackTrace();
                         }
                 }
+                System.out.println("done sending file.");
         } catch (IOException e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();

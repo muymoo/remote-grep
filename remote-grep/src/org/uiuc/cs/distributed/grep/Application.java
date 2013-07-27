@@ -50,7 +50,8 @@ public class Application {
 	public DistributedFileSystemClient dfsClient;
 	private FailureDetectorServer failureDetectorServer;
 	private FailureDetectorClient failureDetectorClient;
-	private MapleMaster mapleServer;
+	private MapleJuiceServer mapleJuiceServer;
+	private MapleJuiceClient mapleJuiceClient;
 	public ArrayList<GrepTask> grepTasks;
 	public GrepTask taskToStopServer;
 	public static final String INTRODUCER_IP = "130.126.112.148";
@@ -113,7 +114,11 @@ public class Application {
 		while(!completed)
 		{
 			try {
-				p = Runtime.getRuntime().exec("mkdir -p "+Application.LOG_DIR+"; mkdir -p "+Application.SDFS_DIR+"; mkdir -p "+Application.SCRATCH_DIR);
+				p = Runtime.getRuntime().exec("mkdir -p "+Application.LOG_DIR);
+				p.waitFor();
+				p = Runtime.getRuntime().exec("mkdir -p "+Application.SDFS_DIR);
+				p.waitFor();
+				p = Runtime.getRuntime().exec("mkdir -p "+Application.SCRATCH_DIR);
 				p.waitFor();
 				completed = true;
 			} catch (IOException e1) {
@@ -157,6 +162,9 @@ public class Application {
 		this.groupClient = new GroupClient();
 		this.dfsServer = new DistributedFileSystemServer();
 		this.dfsClient = new DistributedFileSystemClient();
+		this.mapleJuiceServer = new MapleJuiceServer();
+		mapleJuiceServer.start();
+		this.mapleJuiceClient = new MapleJuiceClient();
 	}
 
 	/**
@@ -168,14 +176,8 @@ public class Application {
 		startGrepServer(); // listen for incoming grep requests.
 		startDistributedFileSystemListener(); // listen for incoming sdfs put, get, deletes
 		
-		try {
-			hostaddress = InetAddress.getLocalHost().getHostAddress();
-
-			System.out.println("Application - Server started on: "
-					+ hostaddress + ":" + grepServer.getPort());
-		} catch (UnknownHostException e1) {
-			LOGGER.warning("Application - run() - failed to identify host");
-		}
+		System.out.println("Application - Server started on: "
+				+ hostaddress + ":" + grepServer.getPort());
 		// If this is the introducer node, start listening for incoming requests
 		if (hostaddress.equals(INTRODUCER_IP)) {
 			synchronized (group) {
@@ -314,8 +316,7 @@ public class Application {
 						break;
 					}
 					System.out.println("Starting Maple");
-					mapleServer = new MapleMaster(command);
-					mapleServer.start();
+					mapleJuiceClient.maple(command);
 				}
 				else if ("x".equals(input.trim()))
 				{

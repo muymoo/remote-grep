@@ -63,8 +63,8 @@ public class MapleRunner extends Thread {
 	 */
 	private void startMapleTask(String mapleCommandFromServer) {
 		String[] command = parseMapleCommand(mapleCommandFromServer);
-		new MapleTask(command[MAPLE_EXE_SDFS_KEY],
-				command[INTERMEDIATE_PREFIX], command[SDFS_SOURCE_FILE])
+		new MapleTask(new MapleJuiceNode(command[MAPLE_EXE_SDFS_KEY],
+				command[INTERMEDIATE_PREFIX], command[SDFS_SOURCE_FILE],"maple.jar"))
 				.start();
 	}
 

@@ -3,13 +3,19 @@
 # the main compilation target
 all:
 	mkdir -p bin/test
-	javac src/org/uiuc/cs/distributed/grep/Grep.java src/org/uiuc/cs/distributed/grep/Application.java src/org/uiuc/cs/distributed/grep/GrepTask.java src/org/uiuc/cs/distributed/grep/GrepServer.java src/org/uiuc/cs/distributed/grep/Node.java src/org/uiuc/cs/distributed/grep/GroupClient.java src/org/uiuc/cs/distributed/grep/GroupServer.java src/org/uiuc/cs/distributed/grep/FailureDetectorServer.java src/org/uiuc/cs/distributed/grep/FailureDetectorClient.java src/org/uiuc/cs/distributed/grep/GroupMembership.java src/org/uiuc/cs/distributed/grep/DistributedFileSystemClient.java src/org/uiuc/cs/distributed/grep/DistributedFileSystemServer.java src/org/uiuc/cs/distributed/grep/MapleMaster.java src/org/uiuc/cs/distributed/grep/MapleTask.java src/org/uiuc/cs/distributed/grep/MapleRunner.java -d bin
+	javac src/org/uiuc/cs/distributed/grep/Grep.java src/org/uiuc/cs/distributed/grep/Application.java src/org/uiuc/cs/distributed/grep/GrepTask.java src/org/uiuc/cs/distributed/grep/GrepServer.java src/org/uiuc/cs/distributed/grep/Node.java src/org/uiuc/cs/distributed/grep/GroupClient.java src/org/uiuc/cs/distributed/grep/GroupServer.java src/org/uiuc/cs/distributed/grep/FailureDetectorServer.java src/org/uiuc/cs/distributed/grep/FailureDetectorClient.java src/org/uiuc/cs/distributed/grep/GroupMembership.java src/org/uiuc/cs/distributed/grep/DistributedFileSystemClient.java src/org/uiuc/cs/distributed/grep/DistributedFileSystemServer.java src/org/uiuc/cs/distributed/grep/MapleJuiceClient.java src/org/uiuc/cs/distributed/grep/MapleJuiceServer.java src/org/uiuc/cs/distributed/grep/MapleJuiceNode.java src/org/uiuc/cs/distributed/grep/MapleTask.java src/org/uiuc/cs/distributed/grep/MapleRunner.java src/org/uiuc/cs/maplejuice/Juice.java src/org/uiuc/cs/maplejuice/Maple.java -d bin
 	javac -cp 3p/jars/junit-4.11.jar:3p/jars/hamcrest-core-1.3.jar:bin test/org/uiuc/cs/distributed/grep/NodeTest.java test/org/uiuc/cs/distributed/grep/AllTests.java test/org/uiuc/cs/distributed/grep/ApplicationTest.java test/org/uiuc/cs/distributed/grep/GroupMembershipTest.java test/org/uiuc/cs/distributed/grep/util/TestLogs.java test/org/uiuc/cs/distributed/grep/util/PortTester.java -d bin/test
+	
+	# create the Maple.jar
+	mkdir -p org/uiuc/cs/maplejuice
+	cp bin/org/uiuc/cs/maplejuice/Maple.class org/uiuc/cs/maplejuice/Maple.class
+	jar -cvfm Maple.jar src/org/uiuc/cs/maplejuice/maple-manifest.txt org/uiuc/cs/maplejuice/Maple.class
+	rm -rf org
 
 # the main driver for the program
 # needs to be run on each node
 run:
-	java -cp bin org.uiuc.cs.distributed.grep.Application /home/ebowlin2/mp3
+	java -cp bin org.uiuc.cs.distributed.grep.Application
 
 # this target runs the unit tests
 # The other two nodes need to be up and running before unit tests can run ('make run' on those severs first)
@@ -19,6 +25,7 @@ runtests:
 
 clean:
 	rm -rf bin
+	rm -f ./*.jar
 
 # To create logs of different sizes, you can add args the java -cp ...TestLogs line
 # TestLogs <machine index [5-7]> <number of lines [100000=10MB, 1000000=100MB, 10000000=1GB]>

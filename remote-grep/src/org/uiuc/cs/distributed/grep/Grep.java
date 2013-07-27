@@ -21,7 +21,7 @@ public class Grep
         try
         {
             // Use a shell so we can use wildcard (*) for the with ProcessBuilder
-            process = new ProcessBuilder("/bin/sh", "-c", "grep " + regex + " " + Application.logLocation + File.separator + "logs/*")
+            process = new ProcessBuilder("/bin/sh", "-c", "grep " + regex + " " + Application.LOG_DIR + File.separator+"*")
                     .redirectErrorStream(true).start();
 
             BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));

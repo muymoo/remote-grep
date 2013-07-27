@@ -262,7 +262,6 @@ public class FailureDetectorServer {
 						{
 							Node heartbeatNode = new Node(System.currentTimeMillis(),packet.getAddress().toString().replace("/",""),packet.getPort(),System.currentTimeMillis());
 							heartbeatQueue.add(heartbeatNode);
-							Application.LOGGER.info("FailureDetectorServer - producer.run() - received heartbeat from node: "+heartbeatNode.getIP());
 						}
 					}
 					else if(data.equals("ELECTION"))
@@ -356,7 +355,6 @@ public class FailureDetectorServer {
 		    	}
 		        DatagramPacket datagram = new DatagramPacket(data.getBytes("utf-8"), data.length(), target, Application.UDP_FD_PORT);
 		        datagramSocket.send(datagram);
-				Application.LOGGER.info(new Date().getTime() +" FailureDetectorServer - producer.run() - Sending message: "+data);
     		} else {
 				Application.LOGGER.info(new Date().getTime() +" FailureDetectorServer - producer.run() - \""+data+"\" message dropped!");
     		}
