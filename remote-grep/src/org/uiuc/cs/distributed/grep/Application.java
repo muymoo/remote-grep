@@ -318,6 +318,17 @@ public class Application {
 					System.out.println("Starting Maple");
 					mapleJuiceClient.maple(command);
 				}
+				else if(input.startsWith("juice "))
+				{
+					String[] command = input.split(" ");
+					if(command.length < 5)
+					{
+						System.out.println("Usage: juice <juice_exe> <number_of_jobs> <int_file_prefix> <destination_file>");
+						break;
+					}
+					System.out.println("Starting Juice");
+					mapleJuiceClient.juice(command);
+				}
 				else if ("x".equals(input.trim()))
 				{
 					System.out.println("GlobalFileMap: "); 
