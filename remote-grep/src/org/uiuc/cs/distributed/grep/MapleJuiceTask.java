@@ -82,6 +82,8 @@ public class MapleJuiceTask extends Thread {
 					"java -jar " + localExe + " " + localSourceFilePath + " "
 							+ outputFileName);
 			p.waitFor();
+			System.out.println("Putting after execute: " + outputFileName
+					+ " key: " + outputSdfsKey);
 			Application.getInstance().dfsClient.put(outputFileName,
 					outputSdfsKey);
 			if (type.equals("maple")) {
@@ -89,16 +91,18 @@ public class MapleJuiceTask extends Thread {
 						mapleJuiceNode.intermediateFilePrefix,
 						mapleJuiceNode.sdfsSourceFile);
 			} else {
-				Application.getInstance().juiceClient.sendJuiceDone(
-						mapleJuiceNode.intermediateFilePrefix,
-						mapleJuiceNode.sdfsSourceFile);
+//				Application.getInstance().juiceClient.sendJuiceDone(
+//						mapleJuiceNode.intermediateFilePrefix,
+//						mapleJuiceNode.sdfsSourceFile);
 			}
 
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
+			System.out.println("Execution interrupted");
 			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			System.out.println("Could not find file.");
 			e.printStackTrace();
 		}
 		return;

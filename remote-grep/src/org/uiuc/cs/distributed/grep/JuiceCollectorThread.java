@@ -107,12 +107,17 @@ public class JuiceCollectorThread extends Thread {
 					bw.write(currentLine);
 					bw.newLine();
 				}
-				bw.close();
 				fileScanner.close();
 			} catch (IOException e1) {
 				System.out.println("Could not read intermediate file.");
 				e1.printStackTrace();
 			}
+		}
+		try {
+			bw.close();
+		} catch (IOException e) {
+			System.out.println("Could not close writer.");
+			e.printStackTrace();
 		}
 
 		Application.getInstance().dfsClient.put(localDestinationFile,

@@ -115,28 +115,8 @@ class DistributedFileSystemServer extends Thread {
 	            } 
 	            else if(command.equals("put")) 
 	            {
-	                // We are going to store the put'd file on the local machine here (unique file name)
-	            	String fileName = Application.getInstance().dfsClient.generateNewFileName("FILLER.data");
-	                File localFile = new File(fileName);
-	                
-	    
-					byte[] buffer = new byte[65536];
-					int number;
-					InputStream socketStream;
-					socketStream = clientSocket.getInputStream();
-					OutputStream fileStream = new FileOutputStream(localFile);
-					
-					// Read file from sender
-					while ((number = socketStream.read(buffer)) != -1) {
-						fileStream.write(buffer, 0, number);
-					}
-
-					fileStream.close();
-	                socketStream.close();
-	                clientSocket.close();
-	                
-	                // Update the file map on this node
-	                Application.getInstance().dfsClient.updateFileMap(sdfs_key,fileName);
+	            	new DistributedFileSystemPutThread(clientSocket, sdfs_key).start();
+	               
 	                
 	            }	            
 	            else if(command.equals("wheredelete"))

@@ -28,8 +28,8 @@ public class Juice {
 			return;
 		}
 
-		String inputFilePath = args[1];
-		String outputFilePath = args[2];
+		String inputFilePath = args[0];
+		String outputFilePath = args[1];
 
 		File file = new File(outputFilePath);
 		FileWriter fw;
