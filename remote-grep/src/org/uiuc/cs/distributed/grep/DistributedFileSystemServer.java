@@ -63,7 +63,7 @@ class DistributedFileSystemServer extends Thread {
 	            {
 	                String nodeIp = whereis(sdfs_key);
 	    		    out.println(nodeIp);
-	    		    System.out.println("whereis: "+nodeIp);
+	    		    System.out.println("whereis (sdfskey:"+sdfs_key+") : "+nodeIp);
 	            } 
 	            else if(command.equals("get")) 
 	            {
@@ -259,21 +259,33 @@ class DistributedFileSystemServer extends Thread {
      * @returns String - local file path of file to stream
      **/
     public String get(String sdfs_key) {
-         return Application.getInstance().dfsClient.getFileLocation(sdfs_key);
+    	synchronized(Application.getInstance().dfsClient)
+    	{
+    		return Application.getInstance().dfsClient.getFileLocation(sdfs_key);
+    	}
     }
     
  
     //delete
     public Set<String> getList()
     {
-        return Application.getInstance().dfsClient.getFilesOnNode(); 
+    	synchronized(Application.getInstance().dfsClient)
+    	{
+    		return Application.getInstance().dfsClient.getFilesOnNode(); 
+    	}
     }
     
     void populateGlobalFileMap()
     {	
     	long start = new Date().getTime();
          // add contents of local file to global map
-         for(String sdfs_key : Application.getInstance().dfsClient.getFilesOnNode()) {
+    	
+    	Set<String> localFiles;
+    	synchronized(Application.getInstance().dfsClient)
+    	{
+    		localFiles = Application.getInstance().dfsClient.getFilesOnNode();
+    	}
+         for(String sdfs_key : localFiles) {
              Set<Node> nodes = new HashSet<Node>();
              nodes.add(Application.getInstance().group.getSelfNode());
              synchronized(globalFileMap)

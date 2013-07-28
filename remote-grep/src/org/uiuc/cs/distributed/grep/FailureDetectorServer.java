@@ -253,8 +253,6 @@ public class FailureDetectorServer {
 				
 		    	try {
 					String data = new String(packet.getData(),0, packet.getLength(), "UTF-8");
-					Application.LOGGER.info("FailureDetectorServer - producer.run() - received packet data: "+data);
-					
 					
 					if(data.equals("HEARTBEAT"))
 					{
