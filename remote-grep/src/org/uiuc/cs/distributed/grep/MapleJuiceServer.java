@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 
 /**
@@ -29,7 +30,7 @@ public class MapleJuiceServer {
 	protected static ArrayList<String> jobFilesCompleted;
 	public String originatorIP;
 	
-	protected static ArrayList<MapleTask> mapleTaskThreads;
+	protected static ArrayList<MapleJuiceTask> mapleTaskThreads;
 	private Thread producer;
 	private Thread collector;
 	protected ServerSocket mapleServerSocket;
@@ -41,7 +42,7 @@ public class MapleJuiceServer {
 	 *            Takes maple maple_exe intermediate_file_prefix sdfs_file_1...n
 	 */
 	public MapleJuiceServer() {
-		mapleTaskThreads = new ArrayList<MapleTask>();
+		mapleTaskThreads = new ArrayList<MapleJuiceTask>();
 		jobFilesLeft = new ArrayList<String>();
 		jobFilesCompleted = new ArrayList<String>();
 		try {
@@ -62,6 +63,11 @@ public class MapleJuiceServer {
 		producer.stop();
 	}
 	
+	public void resetJobLists()
+	{
+		jobFilesLeft.clear();
+		jobFilesCompleted.clear();
+	}
 	
 	/**
 	 * Main thread for listening for maple/juice requests
@@ -130,7 +136,7 @@ public class MapleJuiceServer {
 		            	String intermediateFilePrefix = commandParts[2];
 		            	String sourceFile = commandParts[3];
 		            	MapleJuiceNode mjNode = new MapleJuiceNode(mapleExeSdfsKey,intermediateFilePrefix,sourceFile,mapleExeSdfsKey);
-		            	MapleTask mapleTask = new MapleTask(mjNode);
+		            	MapleJuiceTask mapleTask = new MapleJuiceTask(mjNode, mjNode.intermediateFilePrefix+"_OUTPUT_"+mjNode.sdfsSourceFile);
 		            	mapleTaskThreads.add(mapleTask);
 		            	mapleTask.start();
 		            } else if(command.equals("mapledone"))
@@ -155,6 +161,67 @@ public class MapleJuiceServer {
 		            }else if(command.equals("maplecomplete"))
 		            {
 		            	System.out.println("maplecomplete:"+commandParts[1]);
+		            	// send message to console to not block anymore
+		            }else if(command.equals("wherejuice"))
+		            {
+		            	originatorIP = clientSocket.getInetAddress().getHostAddress();
+		            	if(commandParts.length < 3)
+		            	{
+		            		out.println("<END>");
+		            	}
+			            String intermediate_file_key = inputLine.split(":")[1];
+			            int num_juice = Integer.parseInt(inputLine.split(":")[2]);
+			            int nodeIndex = 0;
+		            	
+			            
+			            Set<String> keys = Application.getInstance().dfsServer.globalFileMap.keySet();
+			            for(String key : keys) {
+			            	if (key.startsWith(intermediate_file_key)) {
+					            synchronized(Application.getInstance().group.list)
+					            {
+					            	out.println(Application.getInstance().group.list.get(nodeIndex).getIP()+":"+key);
+					            }
+				            	jobFilesLeft.add(key);
+				            	
+				            	nodeIndex = (nodeIndex + 1) % num_juice;
+			            	}
+		            	}
+			            out.println("<END>");
+		            } else if(command.equals("juice"))
+		            {
+		            	if(commandParts.length < 4)
+		            	{
+		            		System.out.println("ERROR: juice command has too few arguments ("+commandParts+")");
+		            	}
+		            	String mapleExeSdfsKey = commandParts[1];
+		            	String intermediateFilePrefix = commandParts[2];
+		            	String sourceFile = commandParts[3];
+		            	MapleJuiceNode mjNode = new MapleJuiceNode(mapleExeSdfsKey,intermediateFilePrefix,sourceFile,mapleExeSdfsKey);
+		            	MapleJuiceTask juiceTask = new MapleJuiceTask(mjNode,  mjNode.intermediateFilePrefix+"_DESTINATION_"+mjNode.sdfsSourceFile);
+		            	mapleTaskThreads.add(juiceTask);
+		            	juiceTask.start();
+		            } else if(command.equals("juicedone"))
+		            {
+		            	System.out.println("juicedone:"+commandParts);
+		            	String intermediateFilePrefix = commandParts[1];
+		            	String sdfsSourceFile = commandParts[2];
+		            	if(jobFilesLeft.contains(sdfsSourceFile))
+		            	{
+		            		jobFilesLeft.remove(sdfsSourceFile);
+		            		jobFilesCompleted.add(sdfsSourceFile);
+		            	} else {
+		            		System.out.println("ERROR - incorrect file sent in");
+		            	}
+		            	
+		            	if(jobFilesLeft.size() == 0)
+		            	{
+		            		// all Maple tasks are done, call collector to resort based on key
+		            		//collector = new JuiceCollectorThread(intermediateFilePrefix, jobFilesCompleted);
+		            		//collector.start();
+		            	}
+		            }else if(command.equals("juicecomplete"))
+		            {
+		            	System.out.println("juicecomplete:"+commandParts[1]);
 		            	// send message to console to not block anymore
 		            }
 					

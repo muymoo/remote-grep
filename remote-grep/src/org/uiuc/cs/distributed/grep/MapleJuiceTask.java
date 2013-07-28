@@ -10,45 +10,33 @@ import java.io.InputStreamReader;
  * @author matt
  * 
  */
-public class MapleTask extends Thread {
+public class MapleJuiceTask extends Thread {
 	private MapleJuiceNode mapleJuiceNode;
+	private String outputSdfsKey;
 
-	public MapleTask(MapleJuiceNode _mapleJuiceNode) {
+	public MapleJuiceTask(MapleJuiceNode _mapleJuiceNode, String _outputSdfsKey) {
 		this.mapleJuiceNode = _mapleJuiceNode;
+		this.outputSdfsKey = _outputSdfsKey;
 	}
 
 	@Override
 	public void run() {
-		getMapleExecutable();
+		String exe = getExecutable();
 		String localSourceFilePath = getSdfsSourceFile();
-		executeMaple(localSourceFilePath);
-		/*
-		String localSourceFilePath = getSdfsSourceFile();
-		BufferedReader in = executeMaple(localSourceFilePath);
-
-		// Read input from maple's output stream
-		String inputLine;
-		try {
-			while ((inputLine = in.readLine()) != null) {
-				System.out.println("Found key:value: " + inputLine);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}*/
-		
-		// TODO: Put output in intermediate file to sdfs
+		execute(exe, localSourceFilePath);
 	}
 
 	/**
-	 * Pulls down the maple executable from SDFS and renames it to maple.jar. It
+	 * Pulls down the executable from SDFS. It
 	 * is stored in the current directory so it can be run from the program.
 	 */
-	private void getMapleExecutable() {
-		if(!Application.getInstance().dfsClient.hasFile(mapleJuiceNode.mapleExecutableSdfsKey))
+	private String getExecutable() {
+		if(!Application.getInstance().dfsClient.hasFile(mapleJuiceNode.executableSdfsKey))
 		{
-			Application.getInstance().dfsClient.get(mapleJuiceNode.mapleExecutableSdfsKey,
-				Application.getInstance().dfsClient.generateNewFileName(mapleJuiceNode.mapleExecutableSdfsKey));
+			Application.getInstance().dfsClient.get(mapleJuiceNode.executableSdfsKey,
+				Application.getInstance().dfsClient.generateNewFileName(mapleJuiceNode.executableSdfsKey));
 		}
+		return Application.getInstance().dfsClient.getFileLocation(mapleJuiceNode.executableSdfsKey);
 	}
 
 	/**
@@ -74,17 +62,17 @@ public class MapleTask extends Thread {
 	 * @return Stream to read output of maple.jar from (usually for capturing
 	 *         the key:value pairs)
 	 */
-	private void executeMaple(String localSourceFilePath) {
+	private void execute(String localExe, String localSourceFilePath) {
 		//BufferedReader in = null;
 		String outputFileName = Application.getInstance().dfsClient.generateNewFileName("file.scratch");
-		System.out.println("Executing maple task: "+"java -jar " + mapleJuiceNode.mapleExe + " " + localSourceFilePath+" "+outputFileName);
+		System.out.println("Executing task: "+"java -jar " + localExe + " " + localSourceFilePath+" "+outputFileName);
 		try {
 			Process p = Runtime.getRuntime()
-					.exec("java -jar " + mapleJuiceNode.mapleExe + " " + localSourceFilePath+" "+outputFileName)
+					.exec("java -jar " + localExe + " " + localSourceFilePath+" "+outputFileName)
 					;
 			p.waitFor();
-			Application.getInstance().dfsClient.put(outputFileName, mapleJuiceNode.intermediateFilePrefix+"_OUTPUT_"+mapleJuiceNode.sdfsSourceFile);
-			Application.getInstance().mapleJuiceClient.sendMapleDone(mapleJuiceNode.intermediateFilePrefix, mapleJuiceNode.sdfsSourceFile);
+			Application.getInstance().dfsClient.put(outputFileName, outputSdfsKey);
+			Application.getInstance().mapleClient.sendMapleDone(mapleJuiceNode.intermediateFilePrefix, mapleJuiceNode.sdfsSourceFile);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -92,11 +80,6 @@ public class MapleTask extends Thread {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("Maple task done.");
-		//	in = new BufferedReader(new InputStreamReader();
-		//} catch (IOException e) {
-		//	e.printStackTrace();
-		//}
 		return;
 	}
 }

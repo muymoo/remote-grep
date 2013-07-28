@@ -51,7 +51,8 @@ public class Application {
 	private FailureDetectorServer failureDetectorServer;
 	private FailureDetectorClient failureDetectorClient;
 	public MapleJuiceServer mapleJuiceServer;
-	public MapleJuiceClient mapleJuiceClient;
+	public MapleClient mapleClient;
+	public JuiceClient juiceClient;
 	public ArrayList<GrepTask> grepTasks;
 	public GrepTask taskToStopServer;
 	public static final String INTRODUCER_IP = "130.126.112.148";
@@ -164,7 +165,8 @@ public class Application {
 		this.dfsClient = new DistributedFileSystemClient();
 		this.mapleJuiceServer = new MapleJuiceServer();
 		mapleJuiceServer.start();
-		this.mapleJuiceClient = new MapleJuiceClient();
+		this.mapleClient = new MapleClient();
+		this.juiceClient = new JuiceClient();
 	}
 
 	/**
@@ -316,7 +318,7 @@ public class Application {
 						break;
 					}
 					System.out.println("Starting Maple");
-					mapleJuiceClient.maple(command);
+					mapleClient.maple(command);
 				}
 				else if(input.startsWith("juice "))
 				{
@@ -327,7 +329,7 @@ public class Application {
 						break;
 					}
 					System.out.println("Starting Juice");
-					mapleJuiceClient.juice(command);
+					juiceClient.juice(command);
 				}
 				else if ("x".equals(input.trim()))
 				{

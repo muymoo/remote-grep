@@ -20,14 +20,16 @@ import java.util.Set;
  * @author matt
  * 
  */
-public class MapleCollectorThread extends Thread {
+public class JuiceCollectorThread extends Thread {
 	private String intermediateFilePrefix;
 	private ArrayList<String> sdfsSourceFiles;
+	private String destinationFileName;
 	
-	public MapleCollectorThread(String _intermediateFilePrefix, ArrayList<String> _sdfsSourceFiles) {
-		super("MapleCollectorThread");
+	public JuiceCollectorThread(String _intermediateFilePrefix, ArrayList<String> _sdfsSourceFiles, String _destinationFileName) {
+		super("JuiceCollectorThread");
 		this.intermediateFilePrefix = _intermediateFilePrefix;
 		this.sdfsSourceFiles = _sdfsSourceFiles;
+		this.destinationFileName = _destinationFileName;
 	}
 
 	@Override
@@ -39,12 +41,12 @@ public class MapleCollectorThread extends Thread {
 	
 	private String getCompletedFileName(String prefix, String source_file)
 	{
-		return prefix+"_OUTPUT_"+source_file;
+		return prefix+"_DESTINATION_"+source_file;
 	}
 	
-	private String getLocalKeyFileName(String prefix, String key_name)
+	private String getLocalDestinationFileName(String prefix, String key_name)
 	{
-		return Application.SCRATCH_DIR+File.separator+prefix+"_"+key_name+".key";
+		return Application.SCRATCH_DIR+File.separator+prefix+"_"+key_name+".juicekey";
 	}
 	
 	private String extractKeyFromLocalKeyFileName(String keyFileName)
@@ -123,14 +125,8 @@ public class MapleCollectorThread extends Thread {
 				e1.printStackTrace();
 			}
 		}
-		
-		// put all the new key files in sdfs
-		Iterator<String> keyFileNameIterator = keyFileNames.iterator();
-		while(keyFileNameIterator.hasNext())
-		{
-			String currName = keyFileNameIterator.next();
-			Application.getInstance().dfsClient.put(currName, this.intermediateFilePrefix+"_"+extractKeyFromLocalKeyFileName(currName));
-		}
+
+		Application.getInstance().dfsClient.put(currName, this.intermediateFilePrefix+"_"+extractKeyFromLocalKeyFileName(currName));
 		
 		// send original client maplecomplete
 		Application.getInstance().mapleClient.sendMapleComplete(this.intermediateFilePrefix);

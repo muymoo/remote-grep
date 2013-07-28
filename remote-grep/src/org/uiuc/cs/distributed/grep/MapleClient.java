@@ -9,14 +9,14 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 
-public class MapleJuiceClient {
+public class MapleClient {
 	
 	private String executable;
 	private String intermediateFilePrefix;
 	private List<String> sdfsSourceFiles;
 	private String MAPLE_SDFS_KEY;
 	
-	public MapleJuiceClient()
+	public MapleClient()
 	{
 	}
 	
@@ -30,13 +30,6 @@ public class MapleJuiceClient {
 		MAPLE_SDFS_KEY = executable;
 		putExecutableInSdfs();
 		distributeMapleJobs();
-		//collectMapleResponses();
-	}
-	
-	
-	public void juice(String[] commands)
-	{
-		
 	}
 	
 	/**
@@ -65,11 +58,9 @@ public class MapleJuiceClient {
             	sdfsString += sdfsSourceFiles.get(i)+":";
             
             out.println("wheremaple:"+intermediateFilePrefix+":"+sdfsString);
-            System.out.println("sending wheremaple");
             String input = "";
             while(!(input = in.readLine()).equals("<END>"))
             {
-            	System.out.println("wheremapleRESPONSE: "+input);
             	delegateMapleTask(input);
             }
             
@@ -79,21 +70,6 @@ public class MapleJuiceClient {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		/*synchronized (Application.getInstance().group.list) {
-			int numberOfNodes = Application.getInstance().group.list.size();
-			int index = 0;
-
-			for (String sdfsSourceFile : sdfsSourceFiles) {
-				// Divide tasks evenly across nodes
-				Node nodeToRunOn = Application.getInstance().group.list
-						.get(index % numberOfNodes);
-
-				// Send task to node
-				delegateMapleTask(nodeToRunOn, sdfsSourceFile);
-
-				index++;
-			}
-		}*/
 	}
 	
 	/**
