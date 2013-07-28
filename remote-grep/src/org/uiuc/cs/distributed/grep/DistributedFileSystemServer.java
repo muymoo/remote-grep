@@ -115,9 +115,8 @@ class DistributedFileSystemServer extends Thread {
 	            } 
 	            else if(command.equals("put")) 
 	            {
-	            	new DistributedFileSystemPutThread(clientSocket, sdfs_key).start();
-	               
-	                
+	            	int clientPort = Integer.parseInt(inputLine.split(":")[2]);
+	            	new DistributedFileSystemPutThread(clientSocket.getInetAddress().getHostAddress(), clientPort, sdfs_key).start();
 	            }	            
 	            else if(command.equals("wheredelete"))
 	            {
@@ -442,8 +441,10 @@ class DistributedFileSystemServer extends Thread {
 		            }
 		        }
 	        }
-	        searchForReplication(true);
-	        
+	        if(Application.getInstance().group.list.size() > 1)
+	        {
+	        	searchForReplication(true);
+	        }
     	} catch (IOException e) {
     		e.printStackTrace();
     	}

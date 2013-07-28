@@ -91,9 +91,9 @@ public class MapleJuiceTask extends Thread {
 						mapleJuiceNode.intermediateFilePrefix,
 						mapleJuiceNode.sdfsSourceFile);
 			} else {
-//				Application.getInstance().juiceClient.sendJuiceDone(
-//						mapleJuiceNode.intermediateFilePrefix,
-//						mapleJuiceNode.sdfsSourceFile);
+				Application.getInstance().juiceClient.sendJuiceDone(
+						mapleJuiceNode.intermediateFilePrefix,
+						mapleJuiceNode.sdfsSourceFile);
 			}
 
 		} catch (InterruptedException e) {

@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public class DistributedFileSystemClient {
     public Map<String,String> fileMap; // Key: SDFS Path, Value: local path
@@ -34,7 +36,7 @@ public class DistributedFileSystemClient {
     	String fileExtension = ".data";
     	if(parts.length > 1)
     		fileExtension = "."+parts[parts.length - 1];
-    	return Application.SDFS_DIR+File.separator+Application.hostaddress+"_"+ new Date().getTime() + fileExtension;
+    	return Application.SDFS_DIR+File.separator+Application.hostaddress+"_"+ UUID.randomUUID().toString() + fileExtension;
     }
     
     public void get( String sdfsFilePath, String localFileName)
@@ -130,13 +132,16 @@ public class DistributedFileSystemClient {
 	        
 	        if(!ipToPlaceFile.equals(""))
 	        {
-		        clientSocket = new Socket(ipToPlaceFile,Application.TCP_SDFS_PORT);
+		        Socket socket = new Socket(ipToPlaceFile,Application.TCP_SDFS_PORT);
+		        ServerSocket serverSocket = new ServerSocket(0);
 		        
 		        // Setup our input and output streams
-		        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-		        out.println("put:"+sdfsKey);
+		        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+		        out.println("put:"+sdfsKey+":"+serverSocket.getLocalPort());
+		        System.out.println("put:"+sdfsKey+":"+serverSocket.getLocalPort());
 		        
-		        sendFileToNode(fileMap.get(sdfsKey));
+		        sendFileToNode(serverSocket, fileMap.get(sdfsKey));
+		        socket.close();
 		    }
 	        
     	} catch (IOException e) {
@@ -271,52 +276,40 @@ public class DistributedFileSystemClient {
     {
         return fileMap.get(sdfs_key);
     }
-    private String sendFileToNode(String localFileName)
+    private String sendFileToNode(ServerSocket socket, String localFileName)
     {
 	    // Read in file
 	    byte[] buffer = new byte[65536];
 	    int number;
 		OutputStream socketOutputStream = null;
 		FileInputStream fileInputStream = null;
-	
-	    // Setup our input and output streams
-	    try {
-			socketOutputStream = clientSocket.getOutputStream();
-		} catch (IOException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
-	    try {
-			fileInputStream = new FileInputStream(localFileName);
-		} catch (FileNotFoundException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
         
         try {
-                System.out.println("sending file: " + fileInputStream);
-                while ((number = fileInputStream.read(buffer)) != -1) {
-                        try {
-                                socketOutputStream.write(buffer, 0, number);
-                        } catch (IOException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                        }
-                }
-                System.out.println("done sending file.");
+        	Socket clientSocket = socket.accept();
+        	socketOutputStream = clientSocket.getOutputStream();
+        	
+        	fileInputStream = new FileInputStream(localFileName);
+        	
+            System.out.println("sending file: " + fileInputStream);
+            while ((number = fileInputStream.read(buffer)) != -1) {
+                    try {
+                            socketOutputStream.write(buffer, 0, number);
+                    } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                    }
+            }
+            System.out.println("done sending file.");
+            
+            
+            socketOutputStream.close();
+            fileInputStream.close();
+            socket.close();
         } catch (IOException e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
         }
 
-        try {
-                socketOutputStream.close();
-                fileInputStream.close();
-                clientSocket.close();
-        } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-        } 
         return null;
     }
     

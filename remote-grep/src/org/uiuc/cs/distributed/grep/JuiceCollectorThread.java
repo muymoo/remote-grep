@@ -29,6 +29,7 @@ public class JuiceCollectorThread extends Thread {
 
 	@Override
 	public void run() {
+		System.out.println("JuiceCollectorThread starting");
 		getAllCompletedFiles();
 		processAllCompletedFiles();
 

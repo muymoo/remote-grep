@@ -29,6 +29,7 @@ public class MapleCollectorThread extends Thread {
 
 	@Override
 	public void run() {
+		System.out.println("MapleCollectorThread starting");
 		getAllCompletedFiles();
 		processAllCompletedFiles();
 		

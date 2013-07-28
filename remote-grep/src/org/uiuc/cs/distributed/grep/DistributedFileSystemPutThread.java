@@ -8,12 +8,14 @@ import java.io.OutputStream;
 import java.net.Socket;
 
 public class DistributedFileSystemPutThread extends Thread {
-	private Socket clientSocket;
+	private String serverIP;
+	private int serverPort;
 	private String key;
 
-	public DistributedFileSystemPutThread(Socket socket, String sdfsKey) {
+	public DistributedFileSystemPutThread(String _serverIP, int _serverPort, String sdfsKey) {
 		super("PutThread");
-		clientSocket = socket;
+		serverIP = _serverIP;
+		serverPort = _serverPort;
 		key = sdfsKey;
 	}
 
@@ -30,7 +32,8 @@ public class DistributedFileSystemPutThread extends Thread {
 		int number;
 		InputStream socketStream;
 		try {
-			socketStream = clientSocket.getInputStream();
+			Socket socket = new Socket(serverIP, serverPort);
+			socketStream = socket.getInputStream();
 
 			OutputStream fileStream = new FileOutputStream(localFile);
 
@@ -44,7 +47,7 @@ public class DistributedFileSystemPutThread extends Thread {
 
 			fileStream.close();
 			socketStream.close();
-			clientSocket.close();
+			socket.close();
 
 		} catch (IOException e) {
 			e.printStackTrace();
