@@ -127,7 +127,7 @@ public class MapleJuiceServer {
 		            	String intermediateFilePrefix = commandParts[2];
 		            	String sourceFile = commandParts[3];
 		            	MapleJuiceNode mjNode = new MapleJuiceNode(mapleExeSdfsKey,intermediateFilePrefix,sourceFile);
-		            	MapleJuiceTask mapleTask = new MapleJuiceTask(mjNode, mjNode.intermediateFilePrefix+"_OUTPUT_"+mjNode.sdfsSourceFile);
+		            	MapleJuiceTask mapleTask = new MapleJuiceTask("maple", mjNode, mjNode.intermediateFilePrefix+"_OUTPUT_"+mjNode.sdfsSourceFile);
 		            	mapleTaskThreads.add(mapleTask);
 		            	mapleTask.start();
 		            } else if(command.equals("mapledone"))
@@ -190,7 +190,7 @@ public class MapleJuiceServer {
 		            	String intermediateFilePrefix = commandParts[2];
 		            	String sourceFile = commandParts[3];
 		            	MapleJuiceNode mjNode = new MapleJuiceNode(juiceExeSdfsKey,intermediateFilePrefix,sourceFile);
-		            	MapleJuiceTask juiceTask = new MapleJuiceTask(mjNode,  mjNode.intermediateFilePrefix+"_DESTINATION_"+mjNode.sdfsSourceFile);
+		            	MapleJuiceTask juiceTask = new MapleJuiceTask("juice", mjNode,  mjNode.intermediateFilePrefix+"_DESTINATION_"+mjNode.sdfsSourceFile);
 		            	mapleTaskThreads.add(juiceTask);
 		            	juiceTask.start();
 		            } else if(command.equals("juicedone"))

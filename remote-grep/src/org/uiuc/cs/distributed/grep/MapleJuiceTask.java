@@ -13,10 +13,13 @@ import java.io.InputStreamReader;
 public class MapleJuiceTask extends Thread {
 	private MapleJuiceNode mapleJuiceNode;
 	private String outputSdfsKey;
+	private String type;
 
-	public MapleJuiceTask(MapleJuiceNode _mapleJuiceNode, String _outputSdfsKey) {
+	public MapleJuiceTask(String type, MapleJuiceNode _mapleJuiceNode,
+			String _outputSdfsKey) {
 		this.mapleJuiceNode = _mapleJuiceNode;
 		this.outputSdfsKey = _outputSdfsKey;
+		this.type = type;
 	}
 
 	@Override
@@ -27,16 +30,19 @@ public class MapleJuiceTask extends Thread {
 	}
 
 	/**
-	 * Pulls down the executable from SDFS. It
-	 * is stored in the current directory so it can be run from the program.
+	 * Pulls down the executable from SDFS. It is stored in the current
+	 * directory so it can be run from the program.
 	 */
 	private String getExecutable() {
-		if(!Application.getInstance().dfsClient.hasFile(mapleJuiceNode.executableSdfsKey))
-		{
-			Application.getInstance().dfsClient.get(mapleJuiceNode.executableSdfsKey,
-				Application.getInstance().dfsClient.generateNewFileName(mapleJuiceNode.executableSdfsKey));
+		if (!Application.getInstance().dfsClient
+				.hasFile(mapleJuiceNode.executableSdfsKey)) {
+			Application.getInstance().dfsClient
+					.get(mapleJuiceNode.executableSdfsKey,
+							Application.getInstance().dfsClient
+									.generateNewFileName(mapleJuiceNode.executableSdfsKey));
 		}
-		return Application.getInstance().dfsClient.getFileLocation(mapleJuiceNode.executableSdfsKey);
+		return Application.getInstance().dfsClient
+				.getFileLocation(mapleJuiceNode.executableSdfsKey);
 	}
 
 	/**
@@ -46,12 +52,15 @@ public class MapleJuiceTask extends Thread {
 	 * @return Local file path to the source file
 	 */
 	private String getSdfsSourceFile() {
-		if(!Application.getInstance().dfsClient.hasFile(mapleJuiceNode.sdfsSourceFile))
-		{
-			String localFileName = Application.getInstance().dfsClient.generateNewFileName("file.scratch");
-			Application.getInstance().dfsClient.get(mapleJuiceNode.sdfsSourceFile, localFileName);
+		if (!Application.getInstance().dfsClient
+				.hasFile(mapleJuiceNode.sdfsSourceFile)) {
+			String localFileName = Application.getInstance().dfsClient
+					.generateNewFileName("file.scratch");
+			Application.getInstance().dfsClient.get(
+					mapleJuiceNode.sdfsSourceFile, localFileName);
 		}
-		return Application.getInstance().dfsClient.getFileLocation(mapleJuiceNode.sdfsSourceFile);
+		return Application.getInstance().dfsClient
+				.getFileLocation(mapleJuiceNode.sdfsSourceFile);
 	}
 
 	/**
@@ -63,16 +72,28 @@ public class MapleJuiceTask extends Thread {
 	 *         the key:value pairs)
 	 */
 	private void execute(String localExe, String localSourceFilePath) {
-		//BufferedReader in = null;
-		String outputFileName = Application.getInstance().dfsClient.generateNewFileName("file.scratch");
-		System.out.println("Executing task: "+"java -jar " + localExe + " " + localSourceFilePath+" "+outputFileName);
+		// BufferedReader in = null;
+		String outputFileName = Application.getInstance().dfsClient
+				.generateNewFileName("file.scratch");
+		System.out.println("Executing task: " + "java -jar " + localExe + " "
+				+ localSourceFilePath + " " + outputFileName);
 		try {
-			Process p = Runtime.getRuntime()
-					.exec("java -jar " + localExe + " " + localSourceFilePath+" "+outputFileName)
-					;
+			Process p = Runtime.getRuntime().exec(
+					"java -jar " + localExe + " " + localSourceFilePath + " "
+							+ outputFileName);
 			p.waitFor();
-			Application.getInstance().dfsClient.put(outputFileName, outputSdfsKey);
-			Application.getInstance().juiceClient.sendJuiceDone(mapleJuiceNode.intermediateFilePrefix, mapleJuiceNode.sdfsSourceFile);
+			Application.getInstance().dfsClient.put(outputFileName,
+					outputSdfsKey);
+			if (type.equals("maple")) {
+				Application.getInstance().mapleClient.sendMapleDone(
+						mapleJuiceNode.intermediateFilePrefix,
+						mapleJuiceNode.sdfsSourceFile);
+			} else {
+				Application.getInstance().juiceClient.sendJuiceDone(
+						mapleJuiceNode.intermediateFilePrefix,
+						mapleJuiceNode.sdfsSourceFile);
+			}
+
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
