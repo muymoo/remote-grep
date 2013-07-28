@@ -23,8 +23,8 @@ public class Juice {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		if (args.length != 3) {
-			System.out.println("usage: juice <input file> <output file>");
+		if (args.length != 2) {
+			System.out.println("usage: java -jar Juice.jar <input file> <output file>");
 			return;
 		}
 
