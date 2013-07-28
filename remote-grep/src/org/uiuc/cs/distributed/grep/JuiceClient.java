@@ -15,6 +15,8 @@ public class JuiceClient {
 	private String intermediateFilePrefix;
 	private List<String> sdfsSourceFiles;
 	private String JUICE_SDFS_KEY;
+	private String numberOfJuices;
+	private String destinationFile;
 	
 	public JuiceClient()
 	{
@@ -25,7 +27,9 @@ public class JuiceClient {
 	{
 		
 		executable = commands[1];
-		intermediateFilePrefix = commands[2];
+		numberOfJuices = commands[2];
+		intermediateFilePrefix = commands[3];
+		destinationFile = commands[4];
 		sdfsSourceFiles = Arrays.asList(commands).subList(3, commands.length);
 		JUICE_SDFS_KEY = executable;
 		putExecutableInSdfs();
@@ -34,8 +38,7 @@ public class JuiceClient {
 	
 	/**
 	 * Places the executable into SDFS so other nodes can access it locally when
-	 * they run it. Each node will just rename it to maple.jar so they can
-	 * access the main class.
+	 * they run it.
 	 */
 	private void putExecutableInSdfs() {
 		Application.getInstance().dfsClient.put(executable, JUICE_SDFS_KEY);
@@ -44,7 +47,7 @@ public class JuiceClient {
 	/**
 	 * Evenly divide maple task + SDFS input files across nodes.
 	 * 
-	 * wherejuice:intermediate_file_prefix:num_juice
+	 * wherejuice:intermediate_file_prefix:num_juice:destination
 	 */
 	private void distributeJuiceJobs() {
 		try {
@@ -53,11 +56,8 @@ public class JuiceClient {
             // Setup our input and output streams
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            String sdfsString = "";
-            for(int i=0;i<sdfsSourceFiles.size();i++)
-            	sdfsString += sdfsSourceFiles.get(i)+":";
             
-            out.println("wherejuice:"+intermediateFilePrefix+":"+sdfsString);
+            out.println("wherejuice:"+intermediateFilePrefix+":"+numberOfJuices+":"+destinationFile);
             System.out.println("sending wherejuice");
             String input = "";
             while(!(input = in.readLine()).equals("<END>"))

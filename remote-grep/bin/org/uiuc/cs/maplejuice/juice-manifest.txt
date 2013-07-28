@@ -1,0 +1,1 @@
+Main-Class: org.uiuc.cs.maplejuice.Juice

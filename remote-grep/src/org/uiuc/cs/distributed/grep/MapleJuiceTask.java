@@ -72,7 +72,7 @@ public class MapleJuiceTask extends Thread {
 					;
 			p.waitFor();
 			Application.getInstance().dfsClient.put(outputFileName, outputSdfsKey);
-			Application.getInstance().mapleClient.sendMapleDone(mapleJuiceNode.intermediateFilePrefix, mapleJuiceNode.sdfsSourceFile);
+			Application.getInstance().juiceClient.sendJuiceDone(mapleJuiceNode.intermediateFilePrefix, mapleJuiceNode.sdfsSourceFile);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
