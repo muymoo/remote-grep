@@ -95,6 +95,32 @@ public class MapleJuiceClient {
 			}
 		}*/
 	}
+	
+	/**
+	 * report back to the leader node that a Maple task has completed.
+	 * 
+	 * Message is sent using format   MAPLEDONE:<intermediate_file_prefix>:<sdfs_source_file>
+	 * 
+	 * @param intermediateFilePrefix
+	 * @param sdfsSourceFile
+	 */
+	public void sendMapleDone(String intermediateFilePrefix, String sdfsSourceFile) {
+		String mapleDoneMessage = "mapledone:"+intermediateFilePrefix+":"+sdfsSourceFile;
+		sendMessage(Application.getInstance().group.getLeader().getIP(),mapleDoneMessage);
+	}
+	
+	/**
+	 * report back to the original node that a Maple job is fully complete
+	 * 
+	 * Message is sent using format   MAPLECOMPLETE:<intermediate_file_prefix>
+	 * 
+	 * @param IP
+	 * @param intermediateFilePrefix
+	 */
+	public void sendMapleComplete(String intermediateFilePrefix) {
+		String mapleCompleteMessage = "maplecomplete:"+intermediateFilePrefix;
+		sendMessage(Application.getInstance().mapleJuiceServer.originatorIP,mapleCompleteMessage);
+	}
 
 
 

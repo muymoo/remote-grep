@@ -50,8 +50,8 @@ public class Application {
 	public DistributedFileSystemClient dfsClient;
 	private FailureDetectorServer failureDetectorServer;
 	private FailureDetectorClient failureDetectorClient;
-	private MapleJuiceServer mapleJuiceServer;
-	private MapleJuiceClient mapleJuiceClient;
+	public MapleJuiceServer mapleJuiceServer;
+	public MapleJuiceClient mapleJuiceClient;
 	public ArrayList<GrepTask> grepTasks;
 	public GrepTask taskToStopServer;
 	public static final String INTRODUCER_IP = "130.126.112.148";

@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
@@ -20,9 +21,17 @@ import java.util.concurrent.BlockingQueue;
  * 
  */
 public class MapleJuiceServer {
-	protected static BlockingQueue<MapleJuiceNode> mapleTaskQueue;
+	/**
+	 * key:   intermediateFilePrefix
+	 * value: sdfs_input_file
+	 */
+	protected static ArrayList<String> jobFilesLeft;
+	protected static ArrayList<String> jobFilesCompleted;
+	public String originatorIP;
+	
 	protected static ArrayList<MapleTask> mapleTaskThreads;
 	private Thread producer;
+	private Thread collector;
 	protected ServerSocket mapleServerSocket;
 
 	/**
@@ -33,6 +42,8 @@ public class MapleJuiceServer {
 	 */
 	public MapleJuiceServer() {
 		mapleTaskThreads = new ArrayList<MapleTask>();
+		jobFilesLeft = new ArrayList<String>();
+		jobFilesCompleted = new ArrayList<String>();
 		try {
 			mapleServerSocket = new ServerSocket(Application.TCP_MAPLE_PORT);
 		} catch (IOException e) {
@@ -89,6 +100,7 @@ public class MapleJuiceServer {
 		            System.out.println("MJServer - command: "+command);
 		            if(command.equals("wheremaple"))
 		            {
+		            	originatorIP = clientSocket.getInetAddress().getHostAddress();
 		            	if(commandParts.length < 3)
 		            	{
 		            		out.println("<END>");
@@ -96,12 +108,14 @@ public class MapleJuiceServer {
 			            String intermediate_file_key = inputLine.split(":")[1];
 			            int totalFiles = commandParts.length - 2;
 			            int nodeIndex = 0;
+		            	
 			            synchronized(Application.getInstance().group.list)
 			            {
 				            for(int i=2;i<commandParts.length;i++)
 				            {
-				            	
 				            	out.println(Application.getInstance().group.list.get(nodeIndex).getIP()+":"+commandParts[i]);
+				            	jobFilesLeft.add(commandParts[i]);
+				            	
 				            	nodeIndex = (nodeIndex + 1) % Application.getInstance().group.list.size();
 				            }
 			            }
@@ -121,7 +135,27 @@ public class MapleJuiceServer {
 		            	mapleTask.start();
 		            } else if(command.equals("mapledone"))
 		            {
+		            	System.out.println("mapledone:"+commandParts);
+		            	String intermediateFilePrefix = commandParts[1];
+		            	String sdfsSourceFile = commandParts[2];
+		            	if(jobFilesLeft.contains(sdfsSourceFile))
+		            	{
+		            		jobFilesLeft.remove(sdfsSourceFile);
+		            		jobFilesCompleted.add(sdfsSourceFile);
+		            	} else {
+		            		System.out.println("ERROR - incorrect file sent in");
+		            	}
 		            	
+		            	if(jobFilesLeft.size() == 0)
+		            	{
+		            		// all Maple tasks are done, call collector to resort based on key
+		            		collector = new MapleCollectorThread(intermediateFilePrefix, jobFilesCompleted);
+		            		collector.start();
+		            	}
+		            }else if(command.equals("maplecomplete"))
+		            {
+		            	System.out.println("maplecomplete:"+commandParts[1]);
+		            	// send message to console to not block anymore
 		            }
 					
 					

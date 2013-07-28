@@ -76,13 +76,15 @@ public class MapleTask extends Thread {
 	 */
 	private void executeMaple(String localSourceFilePath) {
 		//BufferedReader in = null;
-		
-		System.out.println("Executing maple task: "+"java -jar " + mapleJuiceNode.mapleExe + " " + localSourceFilePath);
+		String outputFileName = Application.getInstance().dfsClient.generateNewFileName("file.scratch");
+		System.out.println("Executing maple task: "+"java -jar " + mapleJuiceNode.mapleExe + " " + localSourceFilePath+" "+outputFileName);
 		try {
 			Process p = Runtime.getRuntime()
-					.exec("java -jar " + mapleJuiceNode.mapleExe + " " + localSourceFilePath)
+					.exec("java -jar " + mapleJuiceNode.mapleExe + " " + localSourceFilePath+" "+outputFileName)
 					;
 			p.waitFor();
+			Application.getInstance().dfsClient.put(outputFileName, mapleJuiceNode.intermediateFilePrefix+"_OUTPUT_"+mapleJuiceNode.sdfsSourceFile);
+			Application.getInstance().mapleJuiceClient.sendMapleDone(mapleJuiceNode.intermediateFilePrefix, mapleJuiceNode.sdfsSourceFile);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
