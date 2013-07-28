@@ -12,6 +12,10 @@ all:
 	mkdir -p org/uiuc/cs/maplejuice
 	cp bin/org/uiuc/cs/maplejuice/Maple.class org/uiuc/cs/maplejuice/Maple.class
 	jar -cvfm Maple.jar src/org/uiuc/cs/maplejuice/maple-manifest.txt org/uiuc/cs/maplejuice/Maple.class
+	
+	# create the Juice.jar
+	cp bin/org/uiuc/cs/maplejuice/Juice.class org/uiuc/cs/maplejuice/Juice.class
+	jar -cvfm Juice.jar src/org/uiuc/cs/maplejuice/juice-manifest.txt org/uiuc/cs/maplejuice/Juice.class
 	rm -rf org
 
 # the main driver for the program

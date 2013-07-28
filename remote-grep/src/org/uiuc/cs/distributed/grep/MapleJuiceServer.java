@@ -119,6 +119,9 @@ public class MapleJuiceServer {
 		            	MapleTask mapleTask = new MapleTask(mjNode);
 		            	mapleTaskThreads.add(mapleTask);
 		            	mapleTask.start();
+		            } else if(command.equals("mapledone"))
+		            {
+		            	
 		            }
 					
 					
