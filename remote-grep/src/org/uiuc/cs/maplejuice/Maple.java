@@ -21,13 +21,14 @@ public class Maple {
 	 *            Input and output file
 	 */
 	public static void main(String[] args) {
-		if (args.length != 3) {
-			System.out.println("usage: maple <input file> <output file>");
+		System.out.println(args[0] + " " + args[1] + " " + args.length);
+		if (args.length != 2) {
+			System.out.println("usage: java -jar Maple.jar <input file> <output file>");
 			return;
 		}
 
-		String inputFilePath = args[1];
-		String outputFilePath = args[2];
+		String inputFilePath = args[0];
+		String outputFilePath = args[1];
 
 		File file = new File(outputFilePath);
 		FileWriter fw;
