@@ -24,6 +24,7 @@ public class DistributedFileSystemPutThread extends Thread {
 		String fileName = Application.getInstance().dfsClient
 				.generateNewFileName("FILLER.data");
 		File localFile = new File(fileName);
+		Application.LOGGER.info("DistributedFileSystemPutThread - run - putting file: "+fileName);
 
 		byte[] buffer = new byte[65536];
 		int number;
@@ -34,9 +35,12 @@ public class DistributedFileSystemPutThread extends Thread {
 			OutputStream fileStream = new FileOutputStream(localFile);
 
 			// Read file from sender
+			int writeCounts = 0;
 			while ((number = socketStream.read(buffer)) != -1) {
 				fileStream.write(buffer, 0, number);
+				writeCounts++;
 			}
+			Application.LOGGER.info("DistributedFileSystemPutThread - run - put "+writeCounts+" writes for file: "+fileName);
 
 			fileStream.close();
 			socketStream.close();
