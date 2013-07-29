@@ -58,8 +58,7 @@ public class Maple {
 				while (lineScanner.hasNext()) {
 					// Add the key to the output file
 					String word = lineScanner.next();
-					word = word.trim();
-					word.replaceAll("\\W", "");
+					word = word.trim().replaceAll("\\W", "");
 					bw.write(word + ":" + 1);
 					bw.newLine();
 				}
