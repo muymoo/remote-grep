@@ -53,7 +53,7 @@ class DistributedFileSystemServer extends Thread {
 	            String inputLine = in.readLine();
 	            
 	            // make sure the input line is formatted correctly
-	            if(inputLine.split(":").length < 2) {
+	            if(inputLine == null || inputLine.split(":").length < 2) {
 	            	continue;
 	            }
 	            String command = inputLine.split(":")[0];

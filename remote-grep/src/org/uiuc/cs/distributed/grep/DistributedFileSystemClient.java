@@ -162,7 +162,7 @@ public class DistributedFileSystemClient {
 		    }
 	        
     	} catch (IOException e) {
-    		e.printStackTrace();
+       		e.printStackTrace();
     	}
        
     }

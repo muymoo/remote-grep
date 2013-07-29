@@ -54,6 +54,12 @@ public class JuiceCollectorThread extends Thread {
 				Application.getInstance().dfsClient.get(currentFile,
 						localFileName);
 			}
+    		try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -92,26 +98,29 @@ public class JuiceCollectorThread extends Thread {
 			String currentFile = Application.getInstance().dfsClient
 					.getFileLocation(sdfsCompletedFile);
 
-			try {
-				// Open up file to read in words
-				Scanner fileScanner = null;
+			if(currentFile != null)
+			{
 				try {
-					fileScanner = new Scanner(new File(currentFile));
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
+					// Open up file to read in words
+					Scanner fileScanner = null;
+					try {
+						fileScanner = new Scanner(new File(currentFile));
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+					}
+	
+					// Loop through each line
+					while (fileScanner.hasNextLine()) {
+						String currentLine = fileScanner.nextLine();
+						// Append the line to the output file
+						bw.write(currentLine);
+						bw.newLine();
+					}
+					fileScanner.close();
+				} catch (IOException e1) {
+					System.out.println("Could not read intermediate file.");
+					e1.printStackTrace();
 				}
-
-				// Loop through each line
-				while (fileScanner.hasNextLine()) {
-					String currentLine = fileScanner.nextLine();
-					// Append the line to the output file
-					bw.write(currentLine);
-					bw.newLine();
-				}
-				fileScanner.close();
-			} catch (IOException e1) {
-				System.out.println("Could not read intermediate file.");
-				e1.printStackTrace();
 			}
 		}
 		try {

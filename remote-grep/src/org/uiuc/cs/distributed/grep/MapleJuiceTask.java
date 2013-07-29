@@ -1,6 +1,7 @@
 package org.uiuc.cs.distributed.grep;
 
 import java.io.IOException;
+import java.util.Random;
 
 /**
  * Runs maple executable locally
@@ -95,13 +96,23 @@ public class MapleJuiceTask implements Runnable {
 			boolean isElection = Application.getInstance().group.electionInProgress;
 			while(isElection)
 			{
-				sleep(5);
+				Thread.sleep(5000);
 				isElection = Application.getInstance().group.electionInProgress;
 			}
 			
 			System.out.println("Putting after execute: " + outputFileName
 					+ " key: " + outputSdfsKey);
 			
+			try {
+				Random rand = new Random();
+				int max = 5;
+				int min = 1;
+				int randomNum = rand.nextInt(max - min + 1) + min;
+				Thread.sleep(randomNum * 100);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			Application.getInstance().dfsClient.put(outputFileName,
 					outputSdfsKey);
 			if (type.equals("maple")) {

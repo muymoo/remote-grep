@@ -41,6 +41,7 @@ public class MapleJuiceServer {
 	private Thread producer;
 	private Thread collector;
 	protected ServerSocket mapleServerSocket;
+	protected ExecutorService executor = Executors.newFixedThreadPool(5);
 
 	/**
 	 * Expects command line input per MP's requirement.
@@ -170,7 +171,7 @@ public class MapleJuiceServer {
 		            String inputLine = in.readLine();
 		            
 		            // make sure the input line is formatted correctly
-		            if(inputLine.split(":").length < 2) {
+		            if(inputLine == null || inputLine.split(":").length < 2) {
 		            	continue;
 		            }
 		            String command = inputLine.split(":")[0];
@@ -238,6 +239,9 @@ public class MapleJuiceServer {
 		            }else if(command.equals("maplecomplete"))
 		            {
 		            	System.out.println("maplecomplete:"+commandParts[1]);
+						long end = System.currentTimeMillis();
+
+						System.out.println("Maple Time: " + (end - Application.startMapleTime) + "ms");
 		            	// send message to console to not block anymore
 		            } else if(command.equals("getmaplejobs"))
 		            {
@@ -287,10 +291,30 @@ public class MapleJuiceServer {
 		        			Application.getInstance().dfsClient
 		        					.get(juiceExeSdfsKey,localFileName);
 		        		}
-		        		ExecutorService executor = Executors.newFixedThreadPool(20);
-		            	int num_tasks = commandParts.length - 3;
+		        		
+		        		// download sdfs files to process
 		            	for(int i=3;i<commandParts.length;i++){
-		            		System.out.println("Starting task for sdfs_file:"+commandParts[i]);
+		            		String sourceFile = commandParts[i];
+		            		System.out.println("download sdfs_file:"+sourceFile);
+		            		
+		            		if (!Application.getInstance().dfsClient
+		            				.hasFile(sourceFile)) {
+		            			String localFileName = Application.getInstance().dfsClient
+		            					.generateNewFileName("file.scratch");
+		            			Application.getInstance().dfsClient.get(
+		            					sourceFile, localFileName);
+		            		}
+		            		try {
+								Thread.sleep(200);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+		            	}
+		            	
+		            	
+		            	// start juice tasks
+		            	for(int i=3;i<commandParts.length;i++){
 		            		MapleJuiceNode mjNode = new MapleJuiceNode(juiceExeSdfsKey,intermediateFilePrefix,commandParts[i]);
 			            	MapleJuiceTask juiceTask = new MapleJuiceTask("juice", mjNode,  mjNode.intermediateFilePrefix+"_DESTINATION_"+mjNode.sdfsSourceFile);
 			            	mapleTaskThreads.add(juiceTask);
@@ -320,6 +344,9 @@ public class MapleJuiceServer {
 		            }else if(command.equals("juicecomplete"))
 		            {
 		            	System.out.println("juicecomplete:"+commandParts[1]);
+						long end = System.currentTimeMillis();
+
+						System.out.println("Juice Time: " + (end - Application.startJuiceTime) + "ms");
 		            	// send message to console to not block anymore
 		            }
 					

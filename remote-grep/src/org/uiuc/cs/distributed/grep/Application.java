@@ -40,6 +40,9 @@ public class Application {
 	public static final int timeBoundedFailureInMilli = 5000;
 	public static Logger LOGGER;
 	
+	public static long startMapleTime;
+	public static long startJuiceTime;
+	
 
 	private static Handler logFileHandler;
 	private static Application instance = null;
@@ -318,6 +321,8 @@ public class Application {
 						break;
 					}
 					System.out.println("Starting Maple");
+					
+					Application.startMapleTime = System.currentTimeMillis();
 					mapleClient.maple(command);
 				}
 				else if(input.startsWith("juice "))
@@ -329,6 +334,9 @@ public class Application {
 						break;
 					}
 					System.out.println("Starting Juice");
+
+					
+					Application.startJuiceTime = System.currentTimeMillis();
 					juiceClient.juice(command);
 				}
 				else if ("x".equals(input.trim()))

@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.UUID;
 
 public class DistributedFileSystemGetThread extends Thread {
 	private String serverIP;
@@ -34,11 +35,35 @@ public class DistributedFileSystemGetThread extends Thread {
 		byte[] buffer = new byte[65536];
 		int number;
 		System.out.println("key: " + key + " IP: "+serverIP);
-        File sdfsFile =  new File(Application.getInstance().dfsClient.getFileLocation(key)); // get the sdfs file from local storage
+		String localFile = Application.getInstance().dfsClient.getFileLocation(key);
+		
 		OutputStream socketOutputStream = null;
-		InputStream fileInputStream = null;
 		try {
 			socketOutputStream = socket.getOutputStream();
+		} catch (IOException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+		
+		if(localFile == null)
+		{
+			localFile = Application.SDFS_DIR+File.separator+Application.hostaddress+"_"+ UUID.randomUUID().toString() + ".data";
+		}
+		
+        File sdfsFile =  new File(localFile); // get the sdfs file from local storage
+		if (!sdfsFile.exists()) {
+			try {
+				sdfsFile.createNewFile();
+			} catch (IOException e) {
+				System.out
+						.println("Could not create destination file. Do you have permission?");
+				e.printStackTrace();
+				return;
+			}
+		}
+		
+		InputStream fileInputStream = null;
+		try {
 			fileInputStream = new FileInputStream(sdfsFile);
 		} catch (IOException e2) {
 			// TODO Auto-generated catch block
