@@ -36,13 +36,17 @@ public class MapleJuiceTask extends Thread {
 	private String getExecutable() {
 		if (!Application.getInstance().dfsClient
 				.hasFile(mapleJuiceNode.executableSdfsKey)) {
+			System.out.println("Does not contain the executable - getting it.");
+			String localFileName = Application.getInstance().dfsClient
+					.generateNewFileName("file.jar");
 			Application.getInstance().dfsClient
-					.get(mapleJuiceNode.executableSdfsKey,
-							Application.getInstance().dfsClient
-									.generateNewFileName(mapleJuiceNode.executableSdfsKey));
+					.get(mapleJuiceNode.executableSdfsKey,localFileName);
+			
 		}
-		return Application.getInstance().dfsClient
+		String location = Application.getInstance().dfsClient
 				.getFileLocation(mapleJuiceNode.executableSdfsKey);
+		System.out.println("MapleJuiceTask - getExecutable - location: "+location);
+		return location;
 	}
 
 	/**
@@ -73,6 +77,11 @@ public class MapleJuiceTask extends Thread {
 	 */
 	private void execute(String localExe, String localSourceFilePath) {
 		// BufferedReader in = null;
+		if(localExe == null)
+		{
+			System.out.println("ERROR - MapleJuiceTask - execute() - localExe is null");
+			Application.LOGGER.warning("ERROR - MapleJuiceTask - execute() - localExe is null");
+		}
 		String outputFileName = Application.getInstance().dfsClient
 				.generateNewFileName("file.scratch");
 		System.out.println("Executing task: " + "java -jar " + localExe + " "

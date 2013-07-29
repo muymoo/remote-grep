@@ -375,7 +375,7 @@ public class Application {
 		System.out.println("(q) Query logs");
 		System.out.println("(e) Exit");
 		System.out.println("(put <local_file_name> <sdfs_file_name>)");
-		System.out.println("(maple <maple_exe> <sdfs_intermiedate_prefix> <sdfs_src_file_1> ... <sdfs_src_file_m>");
+		System.out.println("(maple <maple_exe> <sdfs_intermediate_prefix> <sdfs_src_file_1> ... <sdfs_src_file_m>");
 	}
 
 	/**

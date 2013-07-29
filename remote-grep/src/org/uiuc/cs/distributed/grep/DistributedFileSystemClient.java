@@ -41,6 +41,7 @@ public class DistributedFileSystemClient {
     
     public void get( String sdfsFilePath, String localFileName)
     {
+    	System.out.println("DFSClient - starting get");
         // Save time by checking locally first
         if(fileMap.containsKey(sdfsFilePath))
         {
@@ -65,6 +66,7 @@ public class DistributedFileSystemClient {
     	        {
     	        	ipToPlaceFile = Application.getInstance().dfsServer.whereis(sdfsFilePath);
     	        } else {
+    	        	System.out.println("About to run whereis:");
 		            clientSocket = new Socket(Application.getInstance().group.getLeader().getIP(),Application.TCP_SDFS_PORT);
 		            
 		            // Setup our input and output streams
@@ -80,26 +82,41 @@ public class DistributedFileSystemClient {
 	            
     	        }
     	        System.out.println("whereis result: "+ipToPlaceFile);
-	            clientSocket = new Socket(ipToPlaceFile, Application.TCP_SDFS_PORT);
-	            
-	            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-	            out.println("get:"+sdfsFilePath);
-	            System.out.println("Started file receive.");
-				// Setup our input/output streams
-				byte[] buffer = new byte[65536];
-				int number;
-				InputStream socketStream = clientSocket.getInputStream();
-				File f = new File(localFileName);
-				OutputStream fileStream = new FileOutputStream(f);
-				
-				// Read file from sender
-				while ((number = socketStream.read(buffer)) != -1) {
-					fileStream.write(buffer, 0, number);
-				}
-	
-				fileStream.close();
-	            socketStream.close();
-	            clientSocket.close();
+    	        
+    	        if(!ipToPlaceFile.equals(""))
+    	        {
+		            clientSocket = new Socket(ipToPlaceFile, Application.TCP_SDFS_PORT);
+		            ServerSocket serverSocket = new ServerSocket(0);
+		            
+		            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+		            out.println("get:"+sdfsFilePath+":"+serverSocket.getLocalPort());
+		            System.out.println("get:"+sdfsFilePath+":"+serverSocket.getLocalPort());
+		            
+		            Socket socket = serverSocket.accept();
+		            
+		            System.out.println("Started file receive.");
+					// Setup our input/output streams
+					byte[] buffer = new byte[65536];
+					int number;
+					InputStream socketStream = socket.getInputStream();
+					File f = new File(localFileName);
+					OutputStream fileStream = new FileOutputStream(f);
+					
+					// Read file from sender
+					while ((number = socketStream.read(buffer)) != -1) {
+						fileStream.write(buffer, 0, number);
+					}
+					socket.close();
+					serverSocket.close();
+		
+					fileStream.close();
+		            socketStream.close();
+		            clientSocket.close();
+		            
+		            updateFileMap(sdfsFilePath, localFileName);
+    	        } else {
+    	        	System.out.println("File not found.");
+    	        }
         	} catch(Exception e ) {
         		e.printStackTrace();
         	}
@@ -276,6 +293,7 @@ public class DistributedFileSystemClient {
     {
         return fileMap.get(sdfs_key);
     }
+
     private String sendFileToNode(ServerSocket socket, String localFileName)
     {
 	    // Read in file

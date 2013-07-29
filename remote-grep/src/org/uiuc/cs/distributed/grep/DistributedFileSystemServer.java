@@ -67,44 +67,8 @@ class DistributedFileSystemServer extends Thread {
 	            } 
 	            else if(command.equals("get")) 
 	            {
-					byte[] buffer = new byte[65536];
-					int number;
-	                File sdfsFile =  new File(get(sdfs_key)); // get the sdfs file from local storage
-	    			OutputStream socketOutputStream = null;
-	    			InputStream fileInputStream = null;
-					try {
-						socketOutputStream = clientSocket.getOutputStream();
-						fileInputStream = new FileInputStream(sdfsFile);
-					} catch (IOException e2) {
-						// TODO Auto-generated catch block
-						e2.printStackTrace();
-					}
-	    			
-					
-	    	        try {
-	                    System.out.println("reading in file: " + fileInputStream);
-	                    while ((number = fileInputStream.read(buffer)) != -1) {
-	                            try {
-	                                    socketOutputStream.write(buffer, 0, number);
-	                                    System.out.println("write: " + buffer.toString());
-	                            } catch (IOException e) {
-	                                    // TODO Auto-generated catch block
-	                                    e.printStackTrace();
-	                            }
-	                    }
-		            } catch (IOException e1) {
-		                    // TODO Auto-generated catch block
-		                    e1.printStackTrace();
-		            }
-	
-		            try {
-		                    socketOutputStream.close();
-		                    fileInputStream.close();
-		                    clientSocket.close();
-		            } catch (IOException e) {
-		                    // TODO Auto-generated catch block
-		                    e.printStackTrace();
-		            } 
+	            	int clientPort = Integer.parseInt(inputLine.split(":")[2]);
+	            	new DistributedFileSystemGetThread(clientSocket.getInetAddress().getHostAddress(), clientPort, sdfs_key).start();
 	            } 
 	            else if(command.equals("whereput")) 
 	            {
