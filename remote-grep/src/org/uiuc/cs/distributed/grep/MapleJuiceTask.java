@@ -1,8 +1,6 @@
 package org.uiuc.cs.distributed.grep;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 /**
  * Runs maple executable locally
@@ -10,7 +8,7 @@ import java.io.InputStreamReader;
  * @author matt
  * 
  */
-public class MapleJuiceTask extends Thread {
+public class MapleJuiceTask implements Runnable {
 	private MapleJuiceNode mapleJuiceNode;
 	private String outputSdfsKey;
 	private String type;

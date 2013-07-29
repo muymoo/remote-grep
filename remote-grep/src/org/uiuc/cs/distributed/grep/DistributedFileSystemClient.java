@@ -308,7 +308,6 @@ public class DistributedFileSystemClient {
         	
         	fileInputStream = new FileInputStream(localFileName);
         	
-            System.out.println("sending file: " + fileInputStream);
             while ((number = fileInputStream.read(buffer)) != -1) {
                     try {
                             socketOutputStream.write(buffer, 0, number);
@@ -316,9 +315,7 @@ public class DistributedFileSystemClient {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                     }
-            }
-            System.out.println("done sending file.");
-            
+            }            
             
             socketOutputStream.close();
             fileInputStream.close();

@@ -33,6 +33,7 @@ public class DistributedFileSystemGetThread extends Thread {
 		}
 		byte[] buffer = new byte[65536];
 		int number;
+		System.out.println("key: " + key + " IP: "+serverIP);
         File sdfsFile =  new File(Application.getInstance().dfsClient.getFileLocation(key)); // get the sdfs file from local storage
 		OutputStream socketOutputStream = null;
 		InputStream fileInputStream = null;
