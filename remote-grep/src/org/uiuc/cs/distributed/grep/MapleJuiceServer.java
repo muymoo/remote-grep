@@ -179,16 +179,25 @@ public class MapleJuiceServer {
 		            	}
 		            	String juiceExeSdfsKey = commandParts[1];
 		            	String intermediateFilePrefix = commandParts[2];
-		            	String sourceFile = commandParts[3];
 		            	System.out.println("RECEIVED_JUICE: "+commandParts);
-		            	/*
-		            	int num_tasks = commandParts - 3;
-		            	for(int i=0;i<num_tasks;i++){
+		        		if (!Application.getInstance().dfsClient
+		        				.hasFile(juiceExeSdfsKey)) {
+		        			System.out.println("Does not contain the executable - getting it.");
+		        			String localFileName = Application.getInstance().dfsClient
+		        					.generateNewFileName("file.jar");
+		        			Application.getInstance().dfsClient
+		        					.get(juiceExeSdfsKey,localFileName);
+		        		}
+		            	
+		            	int num_tasks = commandParts.length - 3;
+		            	for(int i=3;i<commandParts.length;i++){
+		            		System.out.println("Starting task for sdfs_file:"+commandParts[i]);
+		            		MapleJuiceNode mjNode = new MapleJuiceNode(juiceExeSdfsKey,intermediateFilePrefix,commandParts[i]);
+			            	MapleJuiceTask juiceTask = new MapleJuiceTask("juice", mjNode,  mjNode.intermediateFilePrefix+"_DESTINATION_"+mjNode.sdfsSourceFile);
+			            	mapleTaskThreads.add(juiceTask);
+			            	juiceTask.start();
 		            	}
-		            	MapleJuiceNode mjNode = new MapleJuiceNode(juiceExeSdfsKey,intermediateFilePrefix,sourceFile);
-		            	MapleJuiceTask juiceTask = new MapleJuiceTask("juice", mjNode,  mjNode.intermediateFilePrefix+"_DESTINATION_"+mjNode.sdfsSourceFile);
-		            	mapleTaskThreads.add(juiceTask);
-		            	juiceTask.start();*/
+		            	
 		            } else if(command.equals("juicedone"))
 		            {
 		            	System.out.println("juicedone:"+commandParts);
@@ -234,14 +243,19 @@ public class MapleJuiceServer {
             Set<String> keys = Application.getInstance().dfsServer.globalFileMap.keySet();
             String[] juiceCommands = new String[num_juices];
             
+            for(int i=0;i<num_juices;i++)
+            {
+            	juiceCommands[i] = "";
+            }
+            
             int nodeIndex = 0;
             synchronized(Application.getInstance().group.list)
             {
 	            for(String key : keys) {
 	            	if (key.startsWith(intermediate_file_key) && !key.startsWith(intermediate_file_key+"_OUTPUT")) {
 	            		System.out.println("Selected Key: " + key);
-		            	//jobFilesLeft.add(key);
-		            	juiceCommands[nodeIndex] +=key+":";
+		            	jobFilesLeft.add(key);
+		            	juiceCommands[nodeIndex] += key+":";
 		            	nodeIndex = (nodeIndex + 1) % num_juices;
 	            	}
 	        	}
@@ -262,10 +276,13 @@ public class MapleJuiceServer {
             {
             	for(int i=0;i<juiceCommands.length;i++)
             	{
-            		String nodeIP = Application.getInstance().group.list.get(i).getIP();
-            		String message = "juice:"+sdfs_juice_key+":"+intermediate_prefix+":"+juiceCommands[i];
-            		System.out.println("juice:"+sdfs_juice_key+":"+intermediate_prefix+":"+juiceCommands[i]);
-            		sendMessage(nodeIP, message);
+            		if(juiceCommands[i].length() != 0)
+            		{
+	            		String nodeIP = Application.getInstance().group.list.get(i).getIP();
+	            		String message = "juice:"+sdfs_juice_key+":"+intermediate_prefix+":"+juiceCommands[i];
+	            		System.out.println("juice:"+sdfs_juice_key+":"+intermediate_prefix+":"+juiceCommands[i]);
+	            		sendMessage(nodeIP, message);
+            		}
             	}
             }
 		}

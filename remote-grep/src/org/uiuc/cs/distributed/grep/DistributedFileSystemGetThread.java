@@ -50,7 +50,6 @@ public class DistributedFileSystemGetThread extends Thread {
             while ((number = fileInputStream.read(buffer)) != -1) {
                     try {
                             socketOutputStream.write(buffer, 0, number);
-                            System.out.println("write: " + buffer.toString());
                     } catch (IOException e) {
                             // TODO Auto-generated catch block
                             e.printStackTrace();

@@ -108,7 +108,6 @@ public class MapleCollectorThread extends Thread {
 					// if file doesnt exists, then create it
 					File keyFile = new File(keyFileName);
 					if (!keyFile.exists()) {
-						System.out.println("File does not exist: " + keyFileName);
 						keyFile.createNewFile();
 						keyFileNames.add(keyFileName);
 					}
