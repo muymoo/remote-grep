@@ -91,8 +91,19 @@ public class MapleJuiceTask extends Thread {
 					"java -jar " + localExe + " " + localSourceFilePath + " "
 							+ outputFileName);
 			p.waitFor();
+
+			
+			// sleep while an election is in progress
+			boolean isElection = Application.getInstance().group.electionInProgress;
+			while(isElection)
+			{
+				sleep(5);
+				isElection = Application.getInstance().group.electionInProgress;
+			}
+			
 			System.out.println("Putting after execute: " + outputFileName
 					+ " key: " + outputSdfsKey);
+			
 			Application.getInstance().dfsClient.put(outputFileName,
 					outputSdfsKey);
 			if (type.equals("maple")) {

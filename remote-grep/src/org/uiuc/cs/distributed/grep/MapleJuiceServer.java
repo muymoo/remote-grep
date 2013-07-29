@@ -8,6 +8,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -21,8 +23,15 @@ public class MapleJuiceServer {
 	/**
 	 * key: intermediateFilePrefix value: sdfs_input_file
 	 */
+	protected static ArrayList<String> globalMapleJobInputs;
+	protected String localMapleIntermediatePrefix;
+	protected static ArrayList<String> localMapleJobInputs;
+	protected static ArrayList<String> localMapleJobsCompleted;
+	protected static int globalMapleDoneMessages;
+	
 	protected static ArrayList<String> jobFilesLeft;
 	protected static ArrayList<String> jobFilesCompleted;
+	
 	public String originatorIP;
 
 	protected static ArrayList<MapleJuiceTask> mapleTaskThreads;
@@ -38,6 +47,10 @@ public class MapleJuiceServer {
 	 */
 	public MapleJuiceServer() {
 		mapleTaskThreads = new ArrayList<MapleJuiceTask>();
+		this.globalMapleJobInputs = new ArrayList<String>();
+		this.localMapleJobInputs = new ArrayList<String>();
+		globalMapleDoneMessages = 0;
+		
 		jobFilesLeft = new ArrayList<String>();
 		jobFilesCompleted = new ArrayList<String>();
 		try {
@@ -57,8 +70,71 @@ public class MapleJuiceServer {
 	}
 
 	public void resetJobLists() {
-		jobFilesLeft.clear();
-		jobFilesCompleted.clear();
+		this.globalMapleJobInputs = new ArrayList<String>();
+		this.localMapleJobInputs = new ArrayList<String>();
+		globalMapleDoneMessages = 0;
+		jobFilesLeft = new ArrayList<String>();
+		jobFilesCompleted = new ArrayList<String>();
+	}
+	
+
+	public void populateGlobalMapleJobInputs()
+	{
+		System.out.println("Populating Global Maple Job Inputs");
+		
+		MapleJuiceServer.globalMapleJobInputs.clear();
+		
+		// add local jobs
+		System.out.println("adding local jobs");
+		for(String job : MapleJuiceServer.localMapleJobInputs)
+		{
+			MapleJuiceServer.globalMapleJobInputs.add(job);
+			globalMapleDoneMessages++;
+		}
+		
+		System.out.println("adding remote jobs");
+		try {
+			// contact all other nodes to get their maps, and add to global map
+			List<Node> allOtherNodes = Application.getInstance().group
+					.getOtherNodes();
+			for (Node node : allOtherNodes) {
+				
+				Socket cSocket = new Socket(node.getIP(),
+						Application.TCP_MAPLE_PORT);
+				// Setup our input and output streams
+				PrintWriter out = new PrintWriter(cSocket.getOutputStream(),
+						true);
+				BufferedReader in = new BufferedReader(new InputStreamReader(
+						cSocket.getInputStream()));
+
+				out.println("getmaplejobs:filler");
+				System.out.println("sending \"getmaplejobs:\" to node:"+node.getIP());
+				String inputLine = "";
+				
+				while (!(inputLine = in.readLine()).equals("<END>")) {
+					String curr_sdfs_key = inputLine;
+					System.out.println("got job: "+curr_sdfs_key);
+					synchronized(MapleJuiceServer.globalMapleJobInputs)
+					{
+						MapleJuiceServer.globalMapleJobInputs.add(curr_sdfs_key);
+					}
+				}
+				out.close();
+				in.close();
+				cSocket.close();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		if(globalMapleDoneMessages > 0 &&
+				globalMapleDoneMessages == MapleJuiceServer.globalMapleJobInputs.size())
+    	{
+    		ArrayList<String> copy = globalMapleJobInputs;
+    		// all Maple tasks are done, call collector to resort based on key
+    		collector = new MapleCollectorThread(localMapleIntermediatePrefix, copy);
+    		collector.start();
+    	}
 	}
 
 	/**
@@ -112,7 +188,12 @@ public class MapleJuiceServer {
 				            for(int i=2;i<commandParts.length;i++)
 				            {
 				            	out.println(Application.getInstance().group.list.get(nodeIndex).getIP()+":"+commandParts[i]);
-				            	jobFilesLeft.add(commandParts[i]);
+				            	
+				            	// if it is the leader, add to the global list
+				            	if(Application.getInstance().group.isLeader())
+				            	{
+				            		globalMapleJobInputs.add(commandParts[i]);
+				            	}
 				            	
 				            	nodeIndex = (nodeIndex + 1) % Application.getInstance().group.list.size();
 				            }
@@ -126,7 +207,9 @@ public class MapleJuiceServer {
 		            	}
 		            	String mapleExeSdfsKey = commandParts[1];
 		            	String intermediateFilePrefix = commandParts[2];
+		            	localMapleIntermediatePrefix = intermediateFilePrefix;
 		            	String sourceFile = commandParts[3];
+		            	MapleJuiceServer.localMapleJobInputs.add(sourceFile);
 		            	MapleJuiceNode mjNode = new MapleJuiceNode(mapleExeSdfsKey,intermediateFilePrefix,sourceFile);
 		            	MapleJuiceTask mapleTask = new MapleJuiceTask("maple", mjNode, mjNode.intermediateFilePrefix+"_OUTPUT_"+mjNode.sdfsSourceFile);
 		            	mapleTaskThreads.add(mapleTask);
@@ -136,24 +219,37 @@ public class MapleJuiceServer {
 		            	System.out.println("mapledone:"+commandParts);
 		            	String intermediateFilePrefix = commandParts[1];
 		            	String sdfsSourceFile = commandParts[2];
-		            	if(jobFilesLeft.contains(sdfsSourceFile))
+		            	globalMapleDoneMessages++;
+		            	if(globalMapleDoneMessages > globalMapleJobInputs.size())
 		            	{
-		            		jobFilesLeft.remove(sdfsSourceFile);
-		            		jobFilesCompleted.add(sdfsSourceFile);
-		            	} else {
 		            		System.out.println("ERROR - incorrect file sent in");
 		            	}
 		            	
-		            	if(jobFilesLeft.size() == 0)
+		            	if(globalMapleDoneMessages == MapleJuiceServer.globalMapleJobInputs.size())
 		            	{
+		            		ArrayList<String> copy = globalMapleJobInputs;
 		            		// all Maple tasks are done, call collector to resort based on key
-		            		collector = new MapleCollectorThread(intermediateFilePrefix, jobFilesCompleted);
+		            		collector = new MapleCollectorThread(intermediateFilePrefix, copy);
 		            		collector.start();
 		            	}
 		            }else if(command.equals("maplecomplete"))
 		            {
 		            	System.out.println("maplecomplete:"+commandParts[1]);
 		            	// send message to console to not block anymore
+		            } else if(command.equals("getmaplejobs"))
+		            {
+		            	System.out.println("getmaplejobs");
+		            	ArrayList<String> currJobs = MapleJuiceServer.localMapleJobInputs;
+		            	for(String job : currJobs)
+		            	{
+		            		out.println(job);
+		            	}
+		            	out.println("<END>");
+		            	
+		            	for(String job : currJobs)
+		            	{
+		            		Application.getInstance().mapleClient.sendMapleDone(localMapleIntermediatePrefix, job);
+		            	}
 		            }else if(command.equals("wherejuice"))
 		            {
 		            	originatorIP = clientSocket.getInetAddress().getHostAddress();
@@ -238,6 +334,7 @@ public class MapleJuiceServer {
 			// map! :) to find output files for juicing.
 			//System.out.println("Maple complete.");
 		}
+		
 		
 		private String[] prepareJuiceCommands(int num_juices, String intermediate_file_key) {
             Set<String> keys = Application.getInstance().dfsServer.globalFileMap.keySet();

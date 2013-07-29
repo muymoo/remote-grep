@@ -221,6 +221,7 @@ public class FailureDetectorClient{
 							FailureDetectorClient.resetLeaderElectionStatus();
 						}
 						Application.getInstance().dfsServer.populateGlobalFileMap();
+						Application.getInstance().mapleJuiceServer.populateGlobalMapleJobInputs();
 					}
 				} else if(Application.getInstance().groupServer.joinedGroup) {
 					// Only send heartbeats if an election is not in progress
