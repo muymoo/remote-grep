@@ -21,7 +21,6 @@ public class Maple {
 	 *            Input and output file
 	 */
 	public static void main(String[] args) {
-		System.out.println(args[0] + " " + args[1] + " " + args.length);
 		if (args.length != 2) {
 			System.out.println("usage: java -jar Maple.jar <input file> <output file>");
 			return;
@@ -59,6 +58,8 @@ public class Maple {
 				while (lineScanner.hasNext()) {
 					// Add the key to the output file
 					String word = lineScanner.next();
+					word = word.trim();
+					word.replaceAll("\\W", "");
 					bw.write(word + ":" + 1);
 					bw.newLine();
 				}
