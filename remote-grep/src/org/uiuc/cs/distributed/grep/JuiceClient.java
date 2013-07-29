@@ -57,14 +57,15 @@ public class JuiceClient {
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             
-            out.println("wherejuice:"+intermediateFilePrefix+":"+numberOfJuices+":"+destinationFile);
-            System.out.println("sending wherejuice");
+            out.println("wherejuice:"+JUICE_SDFS_KEY+":"+intermediateFilePrefix+":"+numberOfJuices+":"+destinationFile);
+            System.out.println("wherejuice:"+JUICE_SDFS_KEY+":"+intermediateFilePrefix+":"+numberOfJuices+":"+destinationFile);
+            /*
             String input = "";
             while(!(input = in.readLine()).equals("<END>"))
             {
             	System.out.println("wherejuiceRESPONSE: "+input);
             	delegateJuiceTask(input);
-            }
+            }*/
             
             in.close();
             out.close();
@@ -100,21 +101,6 @@ public class JuiceClient {
 		sendMessage(Application.getInstance().mapleJuiceServer.originatorIP,juiceCompleteMessage);
 	}
 
-
-
-	/**
-	 * Delegate maple command to a node
-	 * 
-	 * @param nodeToRunOn
-	 * @param sdfsSourceFile
-	 */
-	private void delegateJuiceTask(String input) {
-		String[] inputCommands = input.split(":");
-		String juiceCommand = "juice:" + JUICE_SDFS_KEY + ":"
-				+ intermediateFilePrefix + ":" + inputCommands[1];
-		System.out.println("juice: "+juiceCommand);
-		sendMessage(inputCommands[0], juiceCommand);
-	}
 
 	/**
 	 * Send a message to a node

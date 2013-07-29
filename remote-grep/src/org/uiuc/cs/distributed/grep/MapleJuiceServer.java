@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -158,28 +159,18 @@ public class MapleJuiceServer {
 		            	originatorIP = clientSocket.getInetAddress().getHostAddress();
 		            	if(commandParts.length < 3)
 		            	{
-		            		out.println("<END>");
+		            		System.out.println("wherejuice: called with too few commands.");
 		            	}
 		            	String[] inputTokens =  inputLine.split(":");
-			            String intermediate_file_key =inputTokens[1];
-			            int num_juice = Integer.parseInt(inputTokens[2]);
-			            destinationFile = inputTokens[3]; // Store for later use
-			            int nodeIndex = 0;
+		            	String sdfs_juice_key = inputTokens[1];
+			            String intermediate_file_key =inputTokens[2];
+			            int num_juice = Integer.parseInt(inputTokens[3]);
+			            destinationFile = inputTokens[4]; // Store for later use
 			            
-			            Set<String> keys = Application.getInstance().dfsServer.globalFileMap.keySet();
-			            for(String key : keys) {
-			            	if (key.startsWith(intermediate_file_key) && !key.startsWith(intermediate_file_key+"_OUTPUT")) {
-			            		System.out.println("Selected Key: " + key);
-					            synchronized(Application.getInstance().group.list)
-					            {
-					            	out.println(Application.getInstance().group.list.get(nodeIndex).getIP()+":"+key);
-					            }
-				            	jobFilesLeft.add(key);
-				            	
-				            	nodeIndex = (nodeIndex + 1) % num_juice;
-			            	}
-		            	}
-			            out.println("<END>");
+			            String[] juiceCommands = prepareJuiceCommands(num_juice, intermediate_file_key);
+			            delegateJuiceTasks(sdfs_juice_key, intermediate_file_key,juiceCommands);
+			            
+			            //out.println("<END>");
 		            } else if(command.equals("juice"))
 		            {
 		            	if(commandParts.length < 4)
@@ -189,10 +180,15 @@ public class MapleJuiceServer {
 		            	String juiceExeSdfsKey = commandParts[1];
 		            	String intermediateFilePrefix = commandParts[2];
 		            	String sourceFile = commandParts[3];
+		            	System.out.println("RECEIVED_JUICE: "+commandParts);
+		            	/*
+		            	int num_tasks = commandParts - 3;
+		            	for(int i=0;i<num_tasks;i++){
+		            	}
 		            	MapleJuiceNode mjNode = new MapleJuiceNode(juiceExeSdfsKey,intermediateFilePrefix,sourceFile);
 		            	MapleJuiceTask juiceTask = new MapleJuiceTask("juice", mjNode,  mjNode.intermediateFilePrefix+"_DESTINATION_"+mjNode.sdfsSourceFile);
 		            	mapleTaskThreads.add(juiceTask);
-		            	juiceTask.start();
+		            	juiceTask.start();*/
 		            } else if(command.equals("juicedone"))
 		            {
 		            	System.out.println("juicedone:"+commandParts);
@@ -232,6 +228,74 @@ public class MapleJuiceServer {
 			// We can then loop through all intermediate prefixes in the global file
 			// map! :) to find output files for juicing.
 			//System.out.println("Maple complete.");
+		}
+		
+		private String[] prepareJuiceCommands(int num_juices, String intermediate_file_key) {
+            Set<String> keys = Application.getInstance().dfsServer.globalFileMap.keySet();
+            String[] juiceCommands = new String[num_juices];
+            
+            int nodeIndex = 0;
+            synchronized(Application.getInstance().group.list)
+            {
+	            for(String key : keys) {
+	            	if (key.startsWith(intermediate_file_key) && !key.startsWith(intermediate_file_key+"_OUTPUT")) {
+	            		System.out.println("Selected Key: " + key);
+		            	//jobFilesLeft.add(key);
+		            	juiceCommands[nodeIndex] +=key+":";
+		            	nodeIndex = (nodeIndex + 1) % num_juices;
+	            	}
+	        	}
+            }
+            
+            return juiceCommands;
+		}
+		
+		/**
+		 * Delegate maple command to a node
+		 * 
+		 * @param nodeToRunOn
+		 * @param sdfsSourceFile
+		 */
+		private void delegateJuiceTasks(String sdfs_juice_key, String intermediate_prefix, String[] juiceCommands) {
+            
+            synchronized(Application.getInstance().group.list)
+            {
+            	for(int i=0;i<juiceCommands.length;i++)
+            	{
+            		String nodeIP = Application.getInstance().group.list.get(i).getIP();
+            		String message = "juice:"+sdfs_juice_key+":"+intermediate_prefix+":"+juiceCommands[i];
+            		System.out.println("juice:"+sdfs_juice_key+":"+intermediate_prefix+":"+juiceCommands[i]);
+            		sendMessage(nodeIP, message);
+            	}
+            }
+		}
+		
+		
+		/**
+		 * Send a message to a node
+		 * 
+		 * @param destinationNode
+		 * @param message
+		 */
+		private void sendMessage(String IP, String message) {
+			// Connect to node via TCP
+			Socket clientSocket;
+			try {
+				// Connect to the destination node
+				clientSocket = new Socket(IP,
+						Application.TCP_MAPLE_PORT);
+				// Setup our output stream
+				PrintWriter out = new PrintWriter(clientSocket.getOutputStream(),
+						true);
+				// Send the message
+				out.println(message);
+				// Cleanup
+				out.close();
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }
