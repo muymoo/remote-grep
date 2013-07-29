@@ -32,7 +32,7 @@ public class MapleCollectorThread extends Thread {
 		System.out.println("MapleCollectorThread starting");
 		getAllCompletedFiles();
 		processAllCompletedFiles();
-		
+		System.out.println("MapleCollectorThread finished");
 	}
 	
 	private String getCompletedFileName(String prefix, String source_file)
@@ -60,8 +60,10 @@ public class MapleCollectorThread extends Thread {
 			String currentFile = getCompletedFileName(this.intermediateFilePrefix,this.sdfsSourceFiles.get(i));
 			if(!Application.getInstance().dfsClient.hasFile(currentFile))
 			{
+				System.out.println("Has file: " + currentFile);
 				String localFileName = Application.getInstance().dfsClient.generateNewFileName("file.scratch");
 				Application.getInstance().dfsClient.get(currentFile,localFileName);
+				System.out.println("Got: " + currentFile + " to: "+ localFileName);
 			}
 		}
 	}
@@ -72,9 +74,10 @@ public class MapleCollectorThread extends Thread {
 		
 		for(int i=0;i<this.sdfsSourceFiles.size();i++)
 		{
+			
 			String sdfsCompletedTask = getCompletedFileName(this.intermediateFilePrefix,this.sdfsSourceFiles.get(i));
 			String currentFile = Application.getInstance().dfsClient.getFileLocation(sdfsCompletedTask);
-			
+			System.out.println("Process completed file: " + currentFile);
 			FileWriter fw;
 
 			try {
@@ -105,6 +108,7 @@ public class MapleCollectorThread extends Thread {
 					// if file doesnt exists, then create it
 					File keyFile = new File(keyFileName);
 					if (!keyFile.exists()) {
+						System.out.println("File does not exist: " + keyFileName);
 						keyFile.createNewFile();
 						keyFileNames.add(keyFileName);
 					}
@@ -122,15 +126,19 @@ public class MapleCollectorThread extends Thread {
 			}
 		}
 		
+		System.out.println("Key Files: " + keyFileNames);
 		// put all the new key files in sdfs
 		Iterator<String> keyFileNameIterator = keyFileNames.iterator();
+		
 		while(keyFileNameIterator.hasNext())
 		{
 			String currName = keyFileNameIterator.next();
+			System.out.println(currName);
 			Application.getInstance().dfsClient.put(currName, this.intermediateFilePrefix+"_"+extractKeyFromLocalKeyFileName(currName));
 		}
 		
 		// send original client maplecomplete
+		System.out.println("Sending maple complete");
 		Application.getInstance().mapleClient.sendMapleComplete(this.intermediateFilePrefix);
 		
 		Application.getInstance().mapleJuiceServer.resetJobLists();
