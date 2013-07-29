@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * MapleMaster delegates the maple commands to all nodes. This should only run
@@ -213,7 +216,7 @@ public class MapleJuiceServer {
 		            	MapleJuiceNode mjNode = new MapleJuiceNode(mapleExeSdfsKey,intermediateFilePrefix,sourceFile);
 		            	MapleJuiceTask mapleTask = new MapleJuiceTask("maple", mjNode, mjNode.intermediateFilePrefix+"_OUTPUT_"+mjNode.sdfsSourceFile);
 		            	mapleTaskThreads.add(mapleTask);
-		            	mapleTask.start();
+		            	new Thread(mapleTask).start();
 		            } else if(command.equals("mapledone"))
 		            {
 		            	System.out.println("mapledone:"+commandParts);
@@ -284,14 +287,15 @@ public class MapleJuiceServer {
 		        			Application.getInstance().dfsClient
 		        					.get(juiceExeSdfsKey,localFileName);
 		        		}
-		            	
+		        		ExecutorService executor = Executors.newFixedThreadPool(20);
 		            	int num_tasks = commandParts.length - 3;
 		            	for(int i=3;i<commandParts.length;i++){
 		            		System.out.println("Starting task for sdfs_file:"+commandParts[i]);
 		            		MapleJuiceNode mjNode = new MapleJuiceNode(juiceExeSdfsKey,intermediateFilePrefix,commandParts[i]);
 			            	MapleJuiceTask juiceTask = new MapleJuiceTask("juice", mjNode,  mjNode.intermediateFilePrefix+"_DESTINATION_"+mjNode.sdfsSourceFile);
 			            	mapleTaskThreads.add(juiceTask);
-			            	juiceTask.start();
+			            	executor.execute(juiceTask);
+			            	//juiceTask.start();
 		            	}
 		            	
 		            } else if(command.equals("juicedone"))
